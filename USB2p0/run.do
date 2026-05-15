@@ -41,7 +41,7 @@
 vlib work
 vmap work work
 
-
+#updating HS transfers code
 #vlog -work work -sv top/USB2p0_UTMI_interface.sv  top/USB2p0_PHY_interface.sv top/USB2p0_pkg.sv top/USB2p0_top.sv -l compile.log 
 vlog -work work -sv top/USB2p0_UTMI_interface.sv  top/USB2p0_PHY_interface.sv top/USB2p0_pkg_regression.sv top/USB2p0_top.sv -l compile.log
 set infile [open "${testname}_log.log" w+]
