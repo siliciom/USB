@@ -1,0 +1,38 @@
+BEGIN 3:USB2p0_device_utmi_interface:fast__1:work
+    utmi_fsls_low_power :  1:USB2p0_pkg:fast:work
+    utmi_rxvalid :  1:USB2p0_pkg:fast:work
+    utmi_xcvrselect :  1:USB2p0_pkg:fast:work
+    utmi_txdata :  1:USB2p0_pkg:fast:work
+    utmi_termselect :  1:USB2p0_pkg:fast:work
+    utmi_txvalidh :  1:USB2p0_pkg:fast:work
+    utmi_suspend_n :  1:USB2p0_pkg:fast:work
+    utmi_txvalid :  1:USB2p0_pkg:fast:work
+    utmi_word_if :  1:USB2p0_pkg:fast:work
+    utmiotg_dmpulldown :  1:USB2p0_pkg:fast:work
+    utmi_txready :  1:USB2p0_pkg:fast:work
+    utmi_rxdata :  1:USB2p0_pkg:fast:work
+    utmiotg_dppulldown :  1:USB2p0_pkg:fast:work
+    utmi_opmode :  1:USB2p0_pkg:fast:work
+    utmi_rxvalidh :  1:USB2p0_pkg:fast:work
+    utmi_fslsserialmode :  1:USB2p0_pkg:fast:work
+    utmi_rxactive :  1:USB2p0_pkg:fast:work
+END 
+BEGIN 3:USB2p0_host_utmi_interface:fast__1:work
+    utmi_suspend_n :  1:USB2p0_pkg:fast:work
+    utmi_txvalid :  1:USB2p0_pkg:fast:work
+    utmi_word_if :  1:USB2p0_pkg:fast:work
+    utmiotg_dmpulldown :  1:USB2p0_pkg:fast:work
+    utmi_txready :  1:USB2p0_pkg:fast:work
+    utmi_rxdata :  1:USB2p0_pkg:fast:work
+    utmiotg_dppulldown :  1:USB2p0_pkg:fast:work
+    utmi_opmode :  1:USB2p0_pkg:fast:work
+    utmi_rxactive :  1:USB2p0_pkg:fast:work
+    utmi_fslsserialmode :  1:USB2p0_pkg:fast:work
+    utmi_rxvalidh :  1:USB2p0_pkg:fast:work
+    utmi_fsls_low_power :  1:USB2p0_pkg:fast:work
+    utmi_rxvalid :  1:USB2p0_pkg:fast:work
+    utmi_xcvrselect :  1:USB2p0_pkg:fast:work
+    utmi_txdata :  1:USB2p0_pkg:fast:work
+    utmi_termselect :  1:USB2p0_pkg:fast:work
+    utmi_txvalidh :  1:USB2p0_pkg:fast:work
+END 
