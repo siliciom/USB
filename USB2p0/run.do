@@ -89,10 +89,8 @@ vmap work work
  vlog -work work -sv top/USB2p0_UTMI_interface.sv  top/USB2p0_PHY_interface.sv top/USB2p0_pkg.sv top/USB2p0_top.sv
 
 
-#set infile [open "logs/${testname}_log.log" w+]
 set infile [open "sim/${testname}_log.log" w+]
 
-#vsim USB2p0_top +UVM_TESTNAME=USB2p0_LS_detect_test +TEST=USB2p0_LS_detect_test -l $infile
 vsim USB2p0_top +UVM_TESTNAME=${testname} -l $infile
 
 

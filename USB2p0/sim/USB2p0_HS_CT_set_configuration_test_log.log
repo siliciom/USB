@@ -1,22 +1,14 @@
 # ** Note: (vsim-220) 'modelsim.ini' is used as the ini file.
-# vsim USB2p0_top "+UVM_TESTNAME=USB2p0_HS_CT_set_configuration_test" -l file1287a190 -ngflow 
-# Start time: 16:01:27 on May 21,2026
+# vsim USB2p0_top "+UVM_TESTNAME=USB2p0_HS_CT_set_configuration_test" -l file12834b30 -ngflow 
+# Start time: 16:57:16 on May 21,2026
 # Loading Siemens Visualizer shared object 'C:/questasim64_2025.2_1/win64/VisualizerRls/bin/libqvisualizer.dll'
-# ** Note: (vsim-8009) Loading existing optimized design _opt
-# //  Questa Sim-64
-# //  Version 2025.2_1 win64 Jun 25 2025
-# //
-# // Unpublished work. Copyright 2025 Siemens
-# //
-# // This material contains trade secrets or otherwise confidential information
-# // owned by Siemens Industry Software Inc. or its affiliates (collectively,
-# // "SISW"), or its licensors. Access to and use of this information is strictly
-# // limited as set forth in the Customer's applicable agreements with SISW.
-# //
-# // This material may not be copied, distributed, or otherwise disclosed outside
-# // of the Customer's facilities without the express written permission of SISW,
-# // and may not be used in any way not expressly authorized by SISW.
-# //
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-220) 'modelsim.ini' is used as the ini file.
+# ** Warning: top/../agents/host_controller_agent/USB2p0_HOST_controller_driver.sv(581): (vopt-2697) MSB 15 of part-select into 'this.utmi_interface_tx.utmi_txdata' is out of bounds.
+# ** Warning: top/../agents/host_controller_agent/USB2p0_HOST_controller_driver.sv(581): (vopt-2697) LSB 8 of part-select into 'this.utmi_interface_tx.utmi_txdata' is out of bounds.
+# ** Warning: top/../agents/device_controller_agent/USB2p0_DEVICE_controller_driver.sv(844): (vopt-2697) MSB 15 of part-select into 'this.utmi_interface_tx.utmi_txdata' is out of bounds.
+# ** Warning: top/../agents/device_controller_agent/USB2p0_DEVICE_controller_driver.sv(844): (vopt-2697) LSB 8 of part-select into 'this.utmi_interface_tx.utmi_txdata' is out of bounds.
+# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=0, Warnings=4.
 # Loading sv_std.std
 # Loading work.USB2p0_host_utmi_interface(fast)
 # Loading work.USB2p0_device_utmi_interface(fast)
@@ -143,6 +135,20 @@
 # UVM_INFO top/../agents/device_controller_agent/USB2p0_DEVICE_controller_driver.sv(84) @ 0: uvm_test_top.usb_environment.device_agent.device_controller_driver [DEVICE_DRIVER] ENTERED_INTO_DEVICE_DRIVER RUN_PHASE 
 # UVM_INFO top/../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_set_configuration_vsequence.sv(19) @ 0: uvm_test_top.usb_environment.usb_vseqr@@hs_set_config_vseq [HS_CONTROL_TRANSFER_VSEQ] ENTERED_INTO_HS_CONTROL_TRANSFER_SET_CONFIG_VSEQ 
 # UVM_INFO top/../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_set_configuration_in_sequence.sv(12) @ 0: uvm_test_top.usb_environment.host_agent.host_controller_sequencer@@status_in_token_seq [HS_SET_CONFIG] ENTERED_INTO_HS_SET_CONFIG_SEQ 
+# //  Questa Sim-64
+# //  Version 2025.2_1 win64 Jun 25 2025
+# //
+# // Unpublished work. Copyright 2025 Siemens
+# //
+# // This material contains trade secrets or otherwise confidential information
+# // owned by Siemens Industry Software Inc. or its affiliates (collectively,
+# // "SISW"), or its licensors. Access to and use of this information is strictly
+# // limited as set forth in the Customer's applicable agreements with SISW.
+# //
+# // This material may not be copied, distributed, or otherwise disclosed outside
+# // of the Customer's facilities without the express written permission of SISW,
+# // and may not be used in any way not expressly authorized by SISW.
+# //
 # UVM_INFO top/../sequences/device_sequences/HS_sequences/USB2p0_DEVICE_HS_send_hs_sequence.sv(11) @ 0: uvm_test_top.usb_environment.device_agent.device_controller_sequencer@@device_hs_det [HS_CONTROL_TRANSFER_SEQ] STARTED_DEVICE_HS_CONTROL_TRANSFER_HS_SEQ 
 # UVM_INFO top/../sequences/device_sequences/HS_sequences/USB2p0_DEVICE_HS_setup_sequence.sv(11) @ 0: uvm_test_top.usb_environment.device_agent.device_controller_sequencer@@device_handshake_send [HS_CONTROL_TRANSFER_SEQ] STARTED_DEVICE_HS_CONTROL_TRANSFER_SEQ 
 # UVM_INFO top/../sequences/device_sequences/HS_sequences/USB2p0_DEVICE_HS_setup_sequence.sv(42) @ 0: uvm_test_top.usb_environment.device_agent.device_controller_sequencer@@device_handshake_send [DEVICE_PAYLOAD] device_payload[0] = d3
@@ -11580,5 +11586,5 @@
 # qwavedb_dumpvars : Simulation ending at [0 10202001] 0
 # 
 # 
-# End time: 16:01:32 on May 21,2026, Elapsed time: 0:00:05
-# Errors: 0, Warnings: 0
+# End time: 16:59:50 on May 21,2026, Elapsed time: 0:02:34
+# Errors: 0, Warnings: 4
