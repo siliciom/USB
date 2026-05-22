@@ -263,7 +263,7 @@ task receiving_dc_tx_data(virtual USB2p0_device_utmi_interface  device_utmi_inte
                 if(word_if && tx_valid && tx_validh)begin
                    temp_16_bit = device_utmi_interface_tx.utmi_txdata;
                         `uvm_info(get_full_name(), $sformatf("RECEIVNG_16BIT_FROM_UTMI_TX - %b",temp_16_bit),UVM_LOW)  
-                       if(temp_16_bit[7:0] == 8'h2d || temp_16_bit[7:0] == 8'hb4)begin
+                       if(temp_16_bit[7:0] == 8'h2d || temp_16_bit[7:0] == 8'hb4 || temp_16_bit[7:0] == 8'he1)begin
                           ack_source = ACK_FROM_DEVICE;
                           `uvm_info("PHY_DRV",$sformatf("ACK_SOURCE_FROM_DEVICE=%0d",ack_source),UVM_LOW)
                        end
@@ -464,7 +464,7 @@ task tx_state_machine(bit tx_sm_valid,tx_sm_ready,pid_flag,tx_sm_validh, tx_sm_w
 			                pid_temp_high_setup = data_tx_sm.pop_front();
 			                `uvm_info(get_full_name(),$sformatf("PID_VALUE******************************* FOR SETUP =%b",pid_temp_high_setup),UVM_LOW)
 
-                                    if((pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_SETUP, ~USB2p0_sequence_item::PID_SETUP}) || (pid_temp_high_setup[7:0] ==                                    {USB2p0_sequence_item::PID_DATA1, ~USB2p0_sequence_item::PID_DATA1}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_OUT, ~USB2p0_sequence_item::PID_OUT}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_DATA0,~USB2p0_sequence_item::PID_DATA0}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_IN, ~USB2p0_sequence_item::PID_IN}) ||  (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_ACK,~USB2p0_sequence_item::PID_ACK}) ) begin 
+                                    if((pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_SETUP, ~USB2p0_sequence_item::PID_SETUP}) || (pid_temp_high_setup[7:0] ==                                    {USB2p0_sequence_item::PID_DATA1, ~USB2p0_sequence_item::PID_DATA1}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_OUT, ~USB2p0_sequence_item::PID_OUT}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_DATA0,~USB2p0_sequence_item::PID_DATA0}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_IN, ~USB2p0_sequence_item::PID_IN}) ||  (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_ACK,~USB2p0_sequence_item::PID_ACK}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_STALL,~USB2p0_sequence_item::PID_STALL})) begin 
 
 			                   send_sync(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
 			                   data_tx_sm.push_front(pid_temp_high_setup);
@@ -521,7 +521,7 @@ task tx_state_machine(bit tx_sm_valid,tx_sm_ready,pid_flag,tx_sm_validh, tx_sm_w
                  		   end
                                      //eop_generate(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
                        //////////////////////////////////////////////////////////////////////////////////////////////////////
-			            else if(pid_temp_high_setup == {USB2p0_sequence_item::PID_ACK, ~USB2p0_sequence_item::PID_ACK})begin
+			            else if((pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_ACK, ~USB2p0_sequence_item::PID_ACK}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_STALL, ~USB2p0_sequence_item::PID_STALL}))begin
 			                   //send_sync(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
 			                   //data_tx_sm.push_front(pid_temp_high_setup);
 			                   //for(int i=0; i<2; i++)begin 
@@ -867,31 +867,6 @@ task tx_piso( input bit[15:0]piso_data_in,int size);
 endtask  
   
   
-/*task tx_bit_stuffing(input data_in_stuffing);
-    
-    static bit [2:0] count; //using static keyword it will increment the count. without static inside task by default it will be automatic it will create diff memory each time so count will be re-initialize.
-    bit data_out_stuffing;
-      
-    `uvm_info(get_full_name(), $sformatf("ENTERED_INTO_TX_BIT_STUFFING_TASK data_in_stuffing=%0d",data_in_stuffing),UVM_LOW)        
-
-    if(data_in_stuffing == 1)
-       count=count+1;
-    else
-       count=0;
-     
-    //if(count == 7)begin
-    if(count == 6)begin
-       	data_out_stuffing = 0;
-       	count =0;
-       // return;
-    end
-    else
-      data_out_stuffing = data_in_stuffing;
-
-      `uvm_info(get_full_name(),$sformatf("BIT_STUFFING:data_in_stuffing = %0b, data_out_stuffing = %0b,count=%0d", data_in_stuffing,data_out_stuffing,count),UVM_LOW)
-       tx_nrzi_encoder(data_out_stuffing);
-endtask */
-
 
 /*task tx_bit_stuffing(input bit data_in_stuffing);
 
@@ -928,11 +903,11 @@ endtask */
    tx_nrzi_encoder(data_out_stuffing);
 
 endtask*/
-  
+
 task tx_bit_stuffing(input bit data_in_stuffing);
- 
+
    bit data_out_stuffing;
- 
+
    `uvm_info(get_full_name(),$sformatf("ENTERED_INTO_TX_BIT_STUFFING_TASK data_in_stuffing=%b", data_in_stuffing), UVM_LOW)
    if(hs_eop_enable) begin
       data_out_stuffing = data_in_stuffing;
@@ -940,23 +915,25 @@ task tx_bit_stuffing(input bit data_in_stuffing);
       tx_nrzi_encoder(data_out_stuffing);
       return;
    end
- 
+
    data_out_stuffing = data_in_stuffing;
    tx_nrzi_encoder(data_out_stuffing);
- 
+
    if(data_in_stuffing == 1)
       tx_stuff_count++;
    else
       tx_stuff_count = 0;
- 
+
    if(tx_stuff_count == 6) begin
       `uvm_info(get_full_name(),"INSERTING_STUFFED_ZERO", UVM_LOW)
       tx_nrzi_encoder(0);
       tx_stuff_count = 0;
    end
    `uvm_info(get_full_name(),$sformatf("BIT_STUFFING:data_in_stuffing=%b count=%0d",data_in_stuffing,tx_stuff_count), UVM_LOW)
- 
+
 endtask
+
+  
   
 task tx_nrzi_encoder(input bit nrzi_input);
         static bit nrzi_output;
@@ -1023,14 +1000,14 @@ task nrzi_decoder(bit dp,dm);
 endtask
 
 task bit_unstuffing(input bit data_in_unstuffing);
- 
+
    bit data_out_unstuffing;
- 
+
    static int one_count = 0;
    `uvm_info("NRZI_DECODER","ENTERED_INTO_BIT_UNSTUFFING_TASK",UVM_LOW);
- 
+
    if(one_count == 6) begin
- 
+
       if(data_in_unstuffing == 0) begin
          `uvm_info("BIT_UNSTUFF","REMOVING_STUFFED_ZERO", UVM_LOW)
          one_count = 0;
@@ -1044,7 +1021,7 @@ task bit_unstuffing(input bit data_in_unstuffing);
      data_out_unstuffing = data_in_unstuffing;
     `uvm_info("BIT_UNSTUFF",$sformatf("PASSING_REAL_BIT=%b", data_out_unstuffing),UVM_LOW)
      rx_state_machine(data_out_unstuffing);
- 
+
    if(data_in_unstuffing == 1)
       one_count++;
    else
@@ -1052,7 +1029,9 @@ task bit_unstuffing(input bit data_in_unstuffing);
       `uvm_info("BIT_UNSTUFF", $sformatf("ONE_COUNT=%0d", one_count),UVM_LOW)
 endtask
 
- /*task bit_unstuffing(input bit data_in_unstuffing);
+
+//////////////////////////////////////////////////////////////////////
+/* task bit_unstuffing(input bit data_in_unstuffing);
 
   bit data_out_unstuffing;
   static int un_count = 0;
@@ -1100,65 +1079,6 @@ endtask
 endtask*/
  
   
-
-
- /* task rx_sipo(bit serial_bit);
-
-   width = word_if ? 16 : 8;
-   `uvm_info("SIPO",$sformatf("RX_WIDTH = %0d WORD_IF=%0d", width,word_if),UVM_LOW)
-   rx_shift_reg = {serial_bit, rx_shift_reg[15:1]};
-
-   `uvm_info("SIPO",$sformatf("RX_SHIFT_REG = %0b",rx_shift_reg),UVM_LOW)
-   `uvm_info("SIPO",$sformatf("RX_COUNT_SIPO = %0d", rx_bit_count),UVM_LOW)
-   if(rx_bit_count == width) begin
-      if(width == 8) begin
-         sipo_data = rx_shift_reg[15:8];
-         `uvm_info("SIPO",$sformatf("SIPO_DATA_8BIT = %0d", sipo_data),UVM_LOW)
-         if((sipo_data == 8'b00000100) && !word_if) begin
-            `uvm_info("SIPO","EOP DETECTED IN 8BIT MODE",UVM_LOW)
-            eop_detected = 1;
-            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_EOP = %p",rx_data_queue),UVM_LOW)
-           // rx_shift_reg = 0;
-           // rx_bit_count = 0;
-         end
-         else begin
-            rx_data_queue.push_back(sipo_data);
-            `uvm_info("SIPO",$sformatf("PARALLEL_DATA_QUEUE = %0p", rx_data_queue),UVM_LOW)
-         end
-      end
-      else begin
-         sipo_data_high = rx_shift_reg[15:8];
-         sipo_data_low  = rx_shift_reg[7:0];
-         `uvm_info("SIPO",$sformatf("SIPO_DATA_HIGH = %0d", sipo_data_high),UVM_LOW)
-         `uvm_info("SIPO",$sformatf("SIPO_DATA_LOW  = %0d", sipo_data_low),UVM_LOW)
-         //if(sipo_data_high == 8'h7F && word_if) begin
-          if(sipo_data_high == 16'b0000_0000_0111_1111 && word_if) begin
-            `uvm_info("SIPO","EOP_DETECTED_IN_HIGH_BYTE",UVM_LOW)
-             rx_data_queue.push_back(sipo_data_low);
-            eop_detected = 1;
-            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_EOP = %p",rx_data_queue),UVM_LOW)
-         end
-         //else if(sipo_data_low == 8'h7F && word_if) begin
-          else if(sipo_data_low == 16'b0000_0000_0111_1111 && word_if) begin
-          //else if(sipo_data_low == 16'h7F && word_if) begin
-            `uvm_info("SIPO","EOP_DETECTED_IN_LOW_BYTE",UVM_LOW)
-            rx_data_queue.push_back(sipo_data_high);
-            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_HIGH_PUSH = %p",rx_data_queue),UVM_LOW)
-            eop_detected = 1;
-         end
-         else begin
-            rx_data_queue.push_back(sipo_data_low);
-            rx_data_queue.push_back(sipo_data_high);
-            `uvm_info("SIPO",$sformatf("RX_PARALLEL_DATA = %0p", rx_data_queue),UVM_LOW)
-         end
-      end
-      rx_bit_count = 0;
-   end
-   rx_bit_count++;
-
-endtask*/
-
-
   task rx_sipo(bit serial_bit);
 
    bit [15:0] sipo_data_16bit;
@@ -1334,7 +1254,7 @@ task rx_state_machine(bit data_out_unstuffing);
                         bit [7:0] first_rx_byte;
                         first_rx_byte = rx_data_queue[0];
 
-                      if(pid_temp_low_setup == 8'd45 || pid_temp_low_setup == 8'hb4 || pid_temp_low_setup == 8'he1 || pid_temp_high_setup[7:0] == 8'd45 || pid_temp_high_setup[7:0] ==8'hb4)begin
+                      if(pid_temp_low_setup == 8'd45 || pid_temp_low_setup == 8'hb4 || pid_temp_low_setup == 8'he1 || pid_temp_high_setup[7:0] == 8'd45 || pid_temp_high_setup[7:0] ==8'hb4 || pid_temp_high_setup[7:0] == 8'he1)begin
                           `uvm_info("PHY_DRIVER",$sformatf("pid_temp_low_setup=%h",pid_temp_low_setup),UVM_LOW)
                           // repeat(1)begin
                               `uvm_info("PHY_DRIVER","BEFORE_ENTERING_INTO_COLLECTING_TASK",UVM_LOW)
@@ -1727,3 +1647,86 @@ endtask*/
       end
        //`uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_BEFORE_ASSIGNED_TO_UNSTUFFING_OUTPUT_ELSE_PART_FOR_ZERO_VALUE: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)                        
 endtask*/
+
+
+/*task tx_bit_stuffing(input data_in_stuffing);
+    
+    static bit [2:0] count; //using static keyword it will increment the count. without static inside task by default it will be automatic it will create diff memory each time so count will be re-initialize.
+    bit data_out_stuffing;
+      
+    `uvm_info(get_full_name(), $sformatf("ENTERED_INTO_TX_BIT_STUFFING_TASK data_in_stuffing=%0d",data_in_stuffing),UVM_LOW)        
+
+    if(data_in_stuffing == 1)
+       count=count+1;
+    else
+       count=0;
+     
+    //if(count == 7)begin
+    if(count == 6)begin
+       	data_out_stuffing = 0;
+       	count =0;
+       // return;
+    end
+    else
+      data_out_stuffing = data_in_stuffing;
+
+      `uvm_info(get_full_name(),$sformatf("BIT_STUFFING:data_in_stuffing = %0b, data_out_stuffing = %0b,count=%0d", data_in_stuffing,data_out_stuffing,count),UVM_LOW)
+       tx_nrzi_encoder(data_out_stuffing);
+endtask */
+
+ /* task rx_sipo(bit serial_bit);
+
+   width = word_if ? 16 : 8;
+   `uvm_info("SIPO",$sformatf("RX_WIDTH = %0d WORD_IF=%0d", width,word_if),UVM_LOW)
+   rx_shift_reg = {serial_bit, rx_shift_reg[15:1]};
+
+   `uvm_info("SIPO",$sformatf("RX_SHIFT_REG = %0b",rx_shift_reg),UVM_LOW)
+   `uvm_info("SIPO",$sformatf("RX_COUNT_SIPO = %0d", rx_bit_count),UVM_LOW)
+   if(rx_bit_count == width) begin
+      if(width == 8) begin
+         sipo_data = rx_shift_reg[15:8];
+         `uvm_info("SIPO",$sformatf("SIPO_DATA_8BIT = %0d", sipo_data),UVM_LOW)
+         if((sipo_data == 8'b00000100) && !word_if) begin
+            `uvm_info("SIPO","EOP DETECTED IN 8BIT MODE",UVM_LOW)
+            eop_detected = 1;
+            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_EOP = %p",rx_data_queue),UVM_LOW)
+           // rx_shift_reg = 0;
+           // rx_bit_count = 0;
+         end
+         else begin
+            rx_data_queue.push_back(sipo_data);
+            `uvm_info("SIPO",$sformatf("PARALLEL_DATA_QUEUE = %0p", rx_data_queue),UVM_LOW)
+         end
+      end
+      else begin
+         sipo_data_high = rx_shift_reg[15:8];
+         sipo_data_low  = rx_shift_reg[7:0];
+         `uvm_info("SIPO",$sformatf("SIPO_DATA_HIGH = %0d", sipo_data_high),UVM_LOW)
+         `uvm_info("SIPO",$sformatf("SIPO_DATA_LOW  = %0d", sipo_data_low),UVM_LOW)
+         //if(sipo_data_high == 8'h7F && word_if) begin
+          if(sipo_data_high == 16'b0000_0000_0111_1111 && word_if) begin
+            `uvm_info("SIPO","EOP_DETECTED_IN_HIGH_BYTE",UVM_LOW)
+             rx_data_queue.push_back(sipo_data_low);
+            eop_detected = 1;
+            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_EOP = %p",rx_data_queue),UVM_LOW)
+         end
+         //else if(sipo_data_low == 8'h7F && word_if) begin
+          else if(sipo_data_low == 16'b0000_0000_0111_1111 && word_if) begin
+          //else if(sipo_data_low == 16'h7F && word_if) begin
+            `uvm_info("SIPO","EOP_DETECTED_IN_LOW_BYTE",UVM_LOW)
+            rx_data_queue.push_back(sipo_data_high);
+            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_HIGH_PUSH = %p",rx_data_queue),UVM_LOW)
+            eop_detected = 1;
+         end
+         else begin
+            rx_data_queue.push_back(sipo_data_low);
+            rx_data_queue.push_back(sipo_data_high);
+            `uvm_info("SIPO",$sformatf("RX_PARALLEL_DATA = %0p", rx_data_queue),UVM_LOW)
+         end
+      end
+      rx_bit_count = 0;
+   end
+   rx_bit_count++;
+
+endtask*/
+

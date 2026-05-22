@@ -339,7 +339,9 @@ class USB2p0_HOST_controller_driver extends uvm_driver #(USB2p0_sequence_item);
              // wait(utmi_interface_rx.utmi_rxactive ==0);
                ack_done_ev.wait_trigger();
                if(rx_data == 'he1)begin
-               `uvm_fatal("HOST_DRIVER",$sformatf("STALL_RECEIVED_FROM_DEVICE=%h",rx_data))   
+               //`uvm_fatal("HOST_DRIVER",$sformatf("STALL_RECEIVED_FROM_DEVICE=%h",rx_data))   
+	        `uvm_info("HOST_DRIVER",$sformatf("RECEIVED_EXPECTED_STALL_PID_FOR_INVALID_DATA=%0b",rx_data),UVM_LOW)
+                return;
                end
                else if(usb_seq_item.wLength == 'd0  && rx_data =='h2d) begin
 	         `uvm_info("HOST_DRIVER",$sformatf("CONTROL_TRANSFER_TASK_WLENGHT=%0b",usb_seq_item.wLength),UVM_LOW)
@@ -492,7 +494,7 @@ class USB2p0_HOST_controller_driver extends uvm_driver #(USB2p0_sequence_item);
            //wait(utmi_interface_rx.utmi_rxactive && (utmi_interface_rx.utmi_rxvalid || utmi_interface_rx.utmi_rxvalidh) && utmi_interface_rx.utmi_rxdata == 'h2d) begin
            wait(utmi_interface_rx.utmi_rxactive && (utmi_interface_rx.utmi_rxvalid || utmi_interface_rx.utmi_rxvalidh)) begin
 	         `uvm_info("HOST_DRIVER",$sformatf("HOST_DRIVER_PID_HANDSHAKE_CHECK"),UVM_LOW)
-                  rx_data = utmi_interface_rx.utmi_rxdata;
+                  rx_data = utmi_interface_rx.utmi_rxdata[7:0];
 	         `uvm_info("HOST_DRIVER",$sformatf("HOST_DRIVER_PID_HANDSHAKE_CHECK rx_data=%0h",utmi_interface_rx.utmi_rxdata),UVM_LOW)
              if(rx_data == 8'h2d)begin
 	         `uvm_info("HOST_DRIVER",$sformatf("HOST_DRIVER_ACK_RECEIVED=%h",rx_data),UVM_LOW)
@@ -692,6 +694,48 @@ endtask
            receiving_bulk_data_from_device();
           end
      endtask
+  
+     /*task automatic receiving_data_from_device(USB2p0_sequence_item usb_seq_item);
+        bit [7:0] payload_q[$];
+        bit [7:0] pid;
+        bit [7:0] crc_lsb;
+        bit [7:0] crc_msb;
+        bit [15:0] crc16;
+        int max_payload_size;
+   
+        case(usb_seq_item.transfer_type)
+            INTERRUPT_TRANSFER : max_payload_size = 64;
+            BULK_TRANSFER : max_payload_size = 512;
+            ISO_TRANSFER :  max_payload_size = 1024;
+         endcase
+         `uvm_info("HOST","WAITING_FOR_DEVICE_DATA",UVM_LOW)
+   
+         if(utmi_interface_rx.utmi_rxvalid) begin
+            @(posedge utmi_interface_rx.utmi_clk);
+            pid = utmi_interface_rx.utmi_rxdata;
+           `uvm_info("HOST", $sformatf("PID_RECEIVED = %0h",pid),UVM_LOW)
+         end
+
+         while(utmi_interface_rx.utmi_rxvalid) begin
+           @(posedge utmi_interface_rx.utmi_clk);
+             if(utmi_interface_rx.utmi_rxvalid) begin
+               payload_q.push_back(utmi_interface_rx.utmi_rxdata);
+             end
+         end
+          crc_msb = payload_q.pop_back();
+          crc_lsb = payload_q.pop_back();
+          crc16 = {crc_msb,crc_lsb};
+          `uvm_info("HOST",$sformatf("CRC16 RECEIVED = %0h",crc16),UVM_LOW)
+
+           if(payload_q.size() > max_payload_size) begin
+                `uvm_error("USB_OVERSIZE_ERROR",$sformatf("PAYLOAD SIZE=%0d EXCEEDED MAX=%0d",payload_q.size(),max_payload_size))
+                 send_host_handshake(PID_STALL);
+                 `uvm_info("HOST","STALL SENT TO DEVICE",UVM_LOW)
+            return;
+           end
+          `uvm_info("HOST",$sformatf("VALID PAYLOAD RECEIVED SIZE=%0d",payload_q.size()),UVM_LOW)
+           send_host_handshake(PID_ACK);
+       endtask*/
 
      task receiving_iso_data_from_device();
          wait(utmi_interface_rx.utmi_rxvalid && utmi_interface_rx.utmi_rxdata[7:0] == 'hb4) begin
@@ -850,474 +894,3 @@ endtask
 
 
 
-       /*task send_host_handshake(bit [3:0] handshake_pid);
-           bit [7:0] hs_pid_byte;
-           hs_pid_byte = {handshake_pid,~handshake_pid};
-	   @(posedge utmi_interface_tx.utmi_clk);
-           utmi_interface_tx.utmi_word_if  <= 1'b0;
-           utmi_interface_tx.utmi_txdata   <= hs_pid_byte;
-           utmi_interface_tx.utmi_txvalid  <= 1'b1;
-           utmi_interface_tx.utmi_txvalidh <= 1'b0;
-           wait(utmi_interface_tx.utmi_txready);
-	   @(posedge utmi_interface_tx.utmi_clk);
-           utmi_interface_tx.utmi_txvalid  <= 1'b0;
-           utmi_interface_tx.utmi_txvalidh <= 1'b0;
-           utmi_interface_tx.utmi_word_if  <= 1'b0;
-           if(handshake_pid == PID_ACK)
-             `uvm_info("HOST_DRIVER",$sformatf("HOST_SENT_HANDSHAKE_ACK= %0h", hs_pid_byte),UVM_LOW)
-           else if(handshake_pid == PID_NAK)
-             `uvm_info("HOST_DRIVER",$sformatf("HOST_SENT_HANDSHAKE_NACK= %0h", hs_pid_byte),UVM_LOW)
-           else 
-             `uvm_info("HOST_DRIVER",$sformatf("HOST_SENT_HANDSHAKE_STALL= %0h", hs_pid_byte),UVM_LOW)
-        endtask*/
-
-
-
-   /* task receive_descriptor_data_utmi_rx();
-      bit [15:0]data16;
-      bit [7:0]data8;
-
-    `uvm_info("HOST_DRIVER", "ENTERED_INTO_RECEIVE_DEVICE_DESCRIPTORS_FROM_UTMI_RX", UVM_LOW)
-         @(posedge utmi_interface_tx.utmi_clk);
-          wait(utmi_interface_rx.utmi_rxvalid || utmi_interface_rx.utmi_rxvalidh) begin
-             if (utmi_interface_rx.utmi_rxvalid) begin
-               if (utmi_interface_rx.utmi_rxvalidh) begin
-                   data16 = utmi_interface_rx.utmi_rxdata;
-                   `uvm_info("HOST_DRIVER",$sformatf("16BIT_DATA = %h", data16),UVM_LOW)
-                    //usb_seq_item.device_rx_data.push_back(data16);
-                   //`uvm_info("HOST_DRIVER",$sformatf("16BIT_DATA = %p validh=%0d", usb_seq_item.device_rx_data,usb_seq_item.rx_validh),UVM_LOW)
-                end
-                else begin
-                    //data8 = utmi_interface_rx.utmi_rxdata[7:0];
-                    data8 = utmi_interface_rx.utmi_rxdata;
-                    `uvm_info("HOST_DRIVER",$sformatf("8BIT_DATA = %h", data8),UVM_LOW)
-                    //usb_seq_item.device_rx_data.push_back(data8);
-                   // `uvm_info("HOST_DRIVER",$sformatf("8BIT_DATA = %p rx_valid=%0d ", usb_seq_item.device_rx_data,usb_seq_item.rx_valid),UVM_LOW)
-                end
-                `uvm_info("HOST_DRIVER",$sformatf("HOST_DRIVER_RECEIVED_DEVICE_DESCRIPTORS_DATA"),UVM_LOW)
-             end
-          end
-      `uvm_info("HOST_DRIVER",$sformatf("HOST_DRIVER_RX_DATA"),UVM_LOW)
-       usb_seq_item.print();
-      //`uvm_info("HOST_DRIVER",$sformatf("RX_DATA = %0p",usb_seq_item.device_rx_data),UVM_LOW)
-       //descrip_data_packet_received(req,usb_seq_item.device_rx_data);
-   endtask*/
-
-/*class USB2p0_HOST_controller_driver extends uvm_driver #(USB2p0_sequence_item);
-  
-       `uvm_component_utils(USB2p0_HOST_controller_driver)
-  
- 	USB2p0_sequence_item usb_seq_item;
- 
- 	virtual USB2p0_UTMI_interface utmi_interface_tx;
-        virtual USB2p0_UTMI_interface utmi_interface_rx;
-        virtual USB2p0_PHY_interface        usb_phy_interface;
-        speed_state usb_speed;
-        uvm_event_pool 	usb_event_pool;
-
-        uvm_event   seq_done_ev; 
-        uvm_event   reset_ev;
-        uvm_event   fs_ev;
-	 //bit [15:0] tx_data_queue[$]; 
-	 bit [7:0] tx_data_queue[$]; 
-         bit [15:0] data16;
-         bit [7:0]  data8;
-          bit [4:0]   crc5;
-	typedef enum bit [7:0] {setup_pid, setup_addr, setup_end_point, setup_crc5,data_pid,data_bmrequest,data_brequest,data_value_lsb,data_value_msb,data_windex_lsb,data_windex_msb,data_wlenght_lsb,data_wlenght_msb,data_crc16_lsb,data_crc16_msb}packet_format;
-
-       
-        typedef enum {SETUP_STAGE, DATA_STAGE, STATUS_STAGE} state_e;
-        state_e present_state, next_state;
-
-	function new(string name="USB2p0_HOST_controller_driver", uvm_component parent);
-		super.new(name,parent);
-	endfunction
-
-	function void build_phase(uvm_phase phase);
-	     super.build_phase(phase);
-	
-    	     if (!uvm_config_db#(virtual USB2p0_UTMI_interface)::get(this, "", "USB_UTMI_INTERFACE_TX", utmi_interface_tx))
-		`uvm_fatal("NO VIF", "UTMI_INTERFACE not found")
-
-	     if (!uvm_config_db#(virtual USB2p0_UTMI_interface)::get(this, "", "USB_UTMI_INTERFACE_RX", utmi_interface_rx))
-  	         `uvm_fatal("NO VIF", "UTMI_INTERFACE not found")
-
-  	     if(!uvm_config_db#(speed_state)::get(this,"","USB_SPEED",usb_speed))
-                 `uvm_fatal("NO USB SPEED","USB_SPEED IS NOT FOUND")
-
-      	    if(!uvm_config_db#(virtual USB2p0_PHY_interface)::get(this, "", "USB_PHY_INTERFACE", usb_phy_interface))
-      	  	     `uvm_fatal("NOVIF", "USB_PHY_INTERFACE not found")
-                usb_seq_item=USB2p0_sequence_item::type_id::create("usb_seq_item");
-  	endfunction
-
-        task device_detection(USB2p0_sequence_item usb_seq_item);
-	    `uvm_info("HOST_CONTROLLER_DRIVER", $sformatf("ENTERED_INTO_DEVICE_DETECTION_TASK"),UVM_LOW)
-	     utmi_interface_tx.utmiotg_vbusvalid<=usb_seq_item.otg_vbusvalid; 
-        
-	   if(usb_seq_item.otg_vbusvalid==1 && usb_seq_item.tx_valid==1) begin  
-	       `uvm_info(get_full_name(), $sformatf("HOST CONTROLLER DRIVER: VBUS=%b",utmi_interface_tx.utmiotg_vbusvalid),UVM_LOW)      
-	        wait(utmi_interface_rx.utmisrp_bvalid==1)
-	       `uvm_info("HOST_CONTROLLER_DRIVER", $sformatf("HOST CONTROLLER DRIVER: utmisrp_bvalid=%b",utmi_interface_rx.utmisrp_bvalid),UVM_LOW)
-	        if(utmi_interface_rx.utmisrp_bvalid==1) begin     
-	         `uvm_info(get_full_name(), $sformatf("HOST_CONTROLLER_DRIVER: utmisrp_bvalid=%b",utmi_interface_rx.utmisrp_bvalid),UVM_LOW)
-	          @(posedge utmi_interface_tx.cb_utmi_host_controller_driver);
-	          detect_device_speed();
-	          if(usb_speed == USB_LS) begin
-                        control_fsm(usb_seq_item);
-	               `uvm_info(get_full_name(), $sformatf("------- %s DEVICE_IS_CONNECTED_TO_HOST----------",usb_speed),UVM_LOW)
-		        usb_seq_item.ls_device_detected=1;
-			`uvm_info("USB_LS_DETECTED",$sformatf("setup_token_pid=%0b",usb_seq_item.setup_token_pid),UVM_LOW)
-	          end 
-	          else
-	          if(usb_speed == USB_FS)begin
-	            `uvm_info(get_full_name(), $sformatf("-------HOST IS CONNECTED TO THE %s DEVICE----------",usb_speed),UVM_LOW)
-	             send_reset();
-	             //send_to_utmi(usb_seq_item);
-		     usb_seq_item.fs_device_detected =1;
-	          end
-	          else if(usb_speed == USB_HS)begin
-	            `uvm_info(get_full_name(), $sformatf("-------HOST IS CONNECTED TO THE %s DEVICE----------",usb_speed),UVM_LOW)
-	             send_reset();
-	            // send_to_utmi(usb_seq_item);
-		     usb_seq_item.hs_device_detected =1;
-	          end
-                end
-           end
-           else if(usb_seq_item.otg_vbusvalid==0) begin  
-              `uvm_info(get_full_name(), $sformatf("---------HOST IS NOT CONNECTED TO THE DEVICE--------"),UVM_LOW)
-           end
-         `uvm_info(get_full_name(), $sformatf("---------DEVICE_DETECTION_DONE--------"),UVM_LOW)
-   endtask
-
-   
- 	task run_phase(uvm_phase phase);
-	       usb_event_pool = uvm_event_pool::get_global_pool();
-
-      		seq_done_ev=usb_event_pool.get("host_chirp_done");
-      		reset_ev   =usb_event_pool.get("RESET_EVENT");
-      		fs_ev      =usb_event_pool.get("FS_EVENT");
-    	  `uvm_info("HOST_DRIVER", $sformatf("ENTERED_INTO_HOST_DRIVER RUN_PHASE "),UVM_LOW) 
-          forever begin
-	    seq_item_port.get_next_item(req);
-	    `uvm_info("HOST_DRIVER","READ_FROM_HOST_SEQ",UVM_LOW)
-	    req.print();
-	    device_detection(req);
-	   seq_item_port.item_done();
-	  end
-      endtask
-
-
-      task detect_device_speed();
-          `uvm_info("HOST","Waiting_for_Detect_Device",UVM_LOW)
-          // #1;
-          `uvm_info("HOST",$sformatf("Line state value=%0d",utmi_interface_rx.utmi_linestate),UVM_LOW) 
-           wait (utmi_interface_rx.utmi_linestate != 2'b00);
-          `uvm_info("HOST_DRV","ENTERED INTO CASE",UVM_LOW)
-
-    	case (utmi_interface_rx.utmi_linestate)
-     	    2'b01: begin
-        	usb_speed = USB_LS;
-               `uvm_info("HOST","LOW_SPEED_DEVICE_IS_DETECTED_BY_THE_HOST",UVM_LOW)
-            end
-      	   2'b10: begin
-        	usb_speed = USB_FS;
-                `uvm_info("HOST","FULL SPEED DEVICE IS DETECTED ",UVM_LOW)
-                `uvm_info("HOST","exit from send_reset",UVM_LOW)
-               //detect_hs_chirp();
-            end
-         endcase
-          `uvm_info("HOST","COMPLETED_for_Detect_Device",UVM_LOW)
-     endtask
-
-
-      task send_reset();
-         `uvm_info("HOST","ASSERT RESET",UVM_LOW)
-          utmi_interface_rx.utmi_linestate <= 2'b00;
-          usb_phy_interface.Dp <= 1'b0;
-          usb_phy_interface.Dm <= 1'b0;
-            
-          //#1;
-         `uvm_info("HOST",$sformatf("UTMI LINESTATE AFTER RESET IS =%b",utmi_interface_rx.utmi_linestate),UVM_LOW)
-         `uvm_info("HOST",$sformatf("FULL SPEED DEVICE IS DETECTED BY HOST"),UVM_LOW)
-         `uvm_info("HCD",$sformatf("USB SPEED= %s",usb_speed),UVM_LOW)
-
-   	 fork begin
-      		wait(device_utmi_interface_rx.utmi_linestate == 2'b01);
-                #3us;
-                usb_speed = USB_HS;
-                send_host_chirp_kj();
-            end
-         join_none
-	    #10ms;
-             usb_phy_interface.Dp <= 1'b1;
-             usb_phy_interface.Dm <= 1'b0;
-   	   if (usb_speed != USB_HS) begin
-    	       usb_speed = USB_FS;
-	       `uvm_info("HCD","FULL SPEED DEVICE IS DETECTED BY THE HOST",UVM_LOW)
-              // send_to_utmi(usb_seq_item);
-            end
-      endtask
-  
-	task detect_hs_chirp();
-   	  `uvm_info("HOST_HS","Waiting Device Chirp K",UVM_LOW)
-              wait (utmi_interface_rx.utmi_linestate == 2'b01);
-		 #3us;
-		`uvm_info("HOST_HS","Device Chirp Detected Capable of High Speed",UVM_LOW)
-		 usb_speed = USB_HS;
-	        `uvm_info("HOST_HS","HOST ENTERED HIGH SPEED",UVM_LOW)
-		send_host_chirp_kj();
-        endtask
-  
-	task send_host_chirp_kj();
-  	     `uvm_info("HOST_HS","Sending KJ Chirp Sequence",UVM_LOW)
-            repeat (3) begin
-                 utmi_interface_tx.utmi_linestate <= 2'b01;
-                 //seq_done_ev.trigger();
-                 #50us;
-                 utmi_interface_tx.utmi_linestate <= 2'b10;
-                 //seq_done_ev.trigger();
-		#50us;
-		//seq_done_ev.trigger();
-             end
-        endtask
-
-
-      task control_fsm(USB2p0_sequence_item usb_seq_item);
-        present_state = SETUP_STAGE;
-        forever begin
-          case (present_state)
-            SETUP_STAGE: begin
-              `uvm_info("FSM","SETUP_STAGE",UVM_LOW)
-              //tx_data_queue.delete();
-              //token_pkt(USB2p0_sequence_item::PID_SETUP);
-              token_pkt(usb_seq_item.setup_token_pid,usb_seq_item);
-              data_pkt_setup(usb_seq_item.setup_data_pid,usb_seq_item);
-              //data_pkt_setup(USB2p0_sequence_item::PID_DATA0);
-              send_to_utmi();
-              //wait_tx_done();
-              handshake_rx();
-              next_state = DATA_STAGE;
-            end
-      
-            DATA_STAGE: begin
-              `uvm_info("FSM","DATA_STAGE",UVM_LOW)
-               //tx_data_queue.delete();
-              if (usb_seq_item.direction == 1) begin
-               `uvm_info("FSM","DATA_STAGE_ENTERED_FROM_DEVICE_TO_HOST",UVM_LOW)
-                //token_pkt(usb_seq_item.in_token_pid);
-               // token_pkt(USB2p0_sequence_item::PID_IN);
-               `uvm_info("FSM",$sformatf("DATA_STAGE_ENTERED_FROM_DEVICE_TO_HOST"),UVM_LOW)
-                send_to_utmi();
-                wait_rx_data();
-                handshake_tx();
-                next_state = STATUS_STAGE;
-              end
-              else begin
-               `uvm_info("FSM","DATA_STAGE_ENTERED_FROM_HOST_TO_DEVICE",UVM_LOW)
-                //token_pkt(usb_seq_item.out_token_pid);
-              //  token_pkt(USB2p0_sequence_item::PID_OUT);
-               `uvm_info("FSM",$sformatf("DATA_STAGE_ENTERED_FROM_HOST_TO_DEVICE"),UVM_LOW)
-                //data_pkt_payload(USB2p0_sequence_item::PID_DATA1);
-                send_to_utmi();
-                handshake_rx();
-                next_state = STATUS_STAGE;
-              end
-            end
-      
-            STATUS_STAGE: begin
-              tx_data_queue.delete();
-              if (usb_seq_item.direction == 1) begin
-                `uvm_info("FSM","STATUS_STAGE (OUT)",UVM_LOW)
-               // token_pkt(usb_seq_item.out_token_pid);
-                send_to_utmi();
-                handshake_rx();
-              end
-              else begin
-                `uvm_info("FSM","STATUS_STAGE (IN)",UVM_LOW)
-               // token_pkt(usb_seq_item.in_token_pid);
-                send_to_utmi();
-                wait_rx_data();
-                handshake_tx();
-              end
-              next_state = SETUP_STAGE;
-              present_state = next_state;
-              `uvm_info("FSM","CONTROL TRANSFER DONE",UVM_LOW)
-              break;
-            end
-          endcase
-          present_state = next_state;
-        end
-      endtask
-
-      task token_pkt(bit [3:0] pid,USB2p0_sequence_item usb_seq_item);
- 
-       bit [7:0] pid_byte;
-       pid_byte = {pid, ~pid};
-       `uvm_info("TOKEN",$sformatf("SETUP_TOKEN_PID=%h",pid_byte),UVM_LOW)
-       tx_data_queue.push_back(pid_byte);
-       tx_data_queue.push_back(usb_seq_item.addr);
-       tx_data_queue.push_back(usb_seq_item.endp);
-       //calc_crc5();
-       calc_crc5(usb_seq_item);
-       tx_data_queue.push_back(usb_seq_item.crc5);
-       `uvm_info("TOKEN",$sformatf("TOKEN=%p",tx_data_queue),UVM_LOW)
-     endtask
-
-     task data_pkt_setup(bit [3:0] pid, USB2p0_sequence_item usb_seq_item);
-       bit [7:0] pid_byte;
-       pid_byte = {pid, ~pid};
-       `uvm_info("DATA",$sformatf("SETUP_DATA_PID=%h",pid_byte),UVM_LOW)
-       tx_data_queue.push_back(pid_byte);
-       tx_data_queue.push_back(usb_seq_item.bmRequestType);
-       tx_data_queue.push_back(usb_seq_item.bRequest);
-       tx_data_queue.push_back(usb_seq_item.wValue[7:0]);
-       tx_data_queue.push_back(usb_seq_item.wValue[15:8]);
-       tx_data_queue.push_back(usb_seq_item.wIndex[7:0]);
-       tx_data_queue.push_back(usb_seq_item.wIndex[15:8]);
-       tx_data_queue.push_back(usb_seq_item.wLength[7:0]);
-       tx_data_queue.push_back(usb_seq_item.wLength[15:8]);
-       calc_crc16(usb_seq_item);
-       tx_data_queue.push_back(usb_seq_item.crc16[7:0]);
-       tx_data_queue.push_back(usb_seq_item.crc16[15:8]);
-       `uvm_info("DATA",$sformatf("DATA=%p",tx_data_queue),UVM_LOW)
-     endtask
-   
-     task send_to_utmi();
-     bit [15:0] tx_data_drive;
-     packet_format pkt;
-     pkt = setup_pid;
-     //@(posedge utmi_interface_tx.cb_utmi_host_controller_driver);
-	          @(posedge utmi_interface_tx.utmi_clk);
-     utmi_interface_tx.utmi_opmode <= usb_seq_item.op_mode;
-     if(usb_seq_item.op_mode == 2'b00) begin
-       utmi_interface_tx.utmi_word_if        <= usb_seq_item.word_if;
-       utmi_interface_tx.utmi_suspend_n      <= usb_seq_item.suspend_n;
-       utmi_interface_tx.utmi_termselect     <= usb_seq_item.term_select;
-       utmi_interface_tx.utmi_xcvrselect     <= usb_seq_item.xcvr_select;
-       utmi_interface_tx.utmi_fsls_low_power <= usb_seq_item.fsls_low_power;
-       utmi_interface_tx.utmi_fslsserialmode <= usb_seq_item.fsls_serialmode;
-       utmi_interface_tx.utmiotg_dppulldown  <= usb_seq_item.otg_dppulldown;
-       utmi_interface_tx.utmiotg_dmpulldown  <= usb_seq_item.otg_dmpulldown;
-
-               if (usb_speed == USB_LS ) begin     
-                  `uvm_info("HDC","ENTERED_INTO_LOWSPEED",UVM_LOW)
-                   utmi_interface_tx.utmi_word_if  <= 1'b0;
-                   utmi_interface_tx.utmi_txvalid  <= usb_seq_item.tx_valid;
-                   utmi_interface_tx.utmi_txvalidh <= 1'b0;
-               end 
-               else if (usb_speed == USB_FS) begin     
-                 `uvm_info("HDC","ENTERED INTO FULLSPEED",UVM_LOW)
-                  utmi_interface_tx.utmi_word_if  <= 1'b0;
-                  utmi_interface_tx.utmi_txvalid  <= usb_seq_item.tx_valid;
-                  utmi_interface_tx.utmi_txvalidh <= 1'b0;
-               end else  //HS
-               begin
-                  utmi_interface_tx.utmi_word_if  <= usb_seq_item.word_if;
-                  utmi_interface_tx.utmi_txvalidh <= usb_seq_item.tx_validh;
-                  utmi_interface_tx.utmi_txvalid  <= usb_seq_item.tx_valid;
-                  `uvm_info("HDC","ENTERED INTO HIGHSPEED",UVM_LOW)
-               end
-
-       while(tx_data_queue.size() > 0) begin
-         @(utmi_interface_tx.cb_utmi_host_controller_driver);
-         if(usb_seq_item.word_if && usb_seq_item.tx_valid && usb_seq_item.tx_validh) begin
-           tx_data_drive[7:0]  = tx_data_queue.pop_front();
-           tx_data_drive[15:8] = tx_data_queue.pop_front();
-           wait(utmi_interface_tx.utmi_txready);
-           utmi_interface_tx.utmi_txdata[7:0]  <= tx_data_drive[7:0];
-           utmi_interface_tx.utmi_txdata[15:8] <= tx_data_drive[15:8];
-           `uvm_info("TX",$sformatf("%s = %0d", pkt.name(), tx_data_drive[7:0]),UVM_LOW)
-           pkt = packet_format'(pkt+1);
-           `uvm_info("TX",$sformatf("%s = %0d", pkt.name(), tx_data_drive[15:8]),UVM_LOW)
-           pkt = packet_format'(pkt+1);
-         end
-         else if(!usb_seq_item.word_if && usb_seq_item.tx_valid) begin
-           tx_data_drive[7:0] = tx_data_queue.pop_front();
-           wait(utmi_interface_tx.utmi_txready);
-           utmi_interface_tx.utmi_txdata[7:0] <= tx_data_drive[7:0];
-           `uvm_info("TX",$sformatf("%s = %0d", pkt.name(), tx_data_drive[7:0]),UVM_LOW)
-           pkt = packet_format'(pkt+1);
-         end
-       end
-       @(negedge utmi_interface_tx.cb_utmi_host_controller_driver);
-       utmi_interface_tx.utmi_txvalid  <= 0;
-       utmi_interface_tx.utmi_txvalidh <= 0;
-       utmi_interface_tx.utmi_word_if  <= 0;
-     end
-     endtask
-
-
-  task handshake_rx();
-    `uvm_info("HANDSHAKE","WAITING FOR DEVICE ACK",UVM_LOW)
-     wait(utmi_interface_rx.utmi_rxvalid);
-   // wait(utmi_interface_rx.utmi_rxactive == 0);
-    `uvm_info("HANDSHAKE","DEVICE ACK RECEIVED",UVM_LOW)
-
-  endtask
-
-  task handshake_tx();
-    bit [7:0] pid_byte;
-    pid_byte = {4'b0010, ~4'b0010};
-    `uvm_info("HANDSHAKE",$sformatf("DATA_HANDSHAKE_PID=%h",pid_byte),UVM_LOW)
-  //  @(posedge utmi_interface_tx.cb_utmi_host_controller_driver);
-	          @(posedge utmi_interface_tx.utmi_clk);
-    wait(utmi_interface_tx.utmi_txready);
-    utmi_interface_tx.utmi_txdata  <= pid_byte;
-    utmi_interface_tx.utmi_txvalid <= 1;
-   // @(posedge utmi_interface_tx.cb_utmi_host_controller_driver);
-	          @(posedge utmi_interface_tx.utmi_clk);
-    utmi_interface_tx.utmi_txvalid <= 0;
-    `uvm_info("HANDSHAKE","HOST SENT ACK",UVM_LOW)
-  endtask
-
- // task wait_tx_done();
- //   wait(utmi_interface_tx.utmi_txready);
- // endtask
-
-  task wait_rx_data();
-    wait(utmi_interface_rx.utmi_rxvalid);
-  endtask
-
-  task calc_crc5(USB2p0_sequence_item usb_seq_item);
-    bit [10:0] token_bits;
-    bit [4:0] crc;
-    bit din;
-    int i;
-
-    token_bits = {usb_seq_item.endp, usb_seq_item.addr};
-    crc = 5'b11111;
-    for (i=10;i>=0;i--) begin
-      din = token_bits[i] ^ crc[4];
-      crc = {crc[3:0],1'b0};
-      if (din) crc ^= 5'b00101;
-    end
-    usb_seq_item.crc5 = ~crc;
-  endtask
-
-  task calc_crc16(USB2p0_sequence_item usb_seq_item);
-    bit [15:0] crc;
-    bit din;
-    bit [7:0] data[$];
-    int i,j;
-    crc = 16'hFFFF;
-    data.push_back(usb_seq_item.bmRequestType);
-    data.push_back(usb_seq_item.bRequest);
-    data.push_back(usb_seq_item.wValue[7:0]);
-    data.push_back(usb_seq_item.wValue[15:8]);
-    data.push_back(usb_seq_item.wIndex[7:0]);
-    data.push_back(usb_seq_item.wIndex[15:8]);
-    data.push_back(usb_seq_item.wLength[7:0]);
-    data.push_back(usb_seq_item.wLength[15:8]);
-    foreach(data[i]) begin
-      for(j=0;j<8;j++) begin
-        din = crc[15]^data[i][j];
-        crc = {crc[14:0],1'b0};
-        if(din) crc ^= 16'h8005;
-      end
-    end
-    usb_seq_item.crc16 = ~crc;
-  endtask
-
-  
-  
-endclass*/

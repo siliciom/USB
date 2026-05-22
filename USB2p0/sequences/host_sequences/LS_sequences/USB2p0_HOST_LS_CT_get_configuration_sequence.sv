@@ -29,8 +29,8 @@ class usb2p0_host_ls_ct_get_configuration_sequence extends USB2p0_HOST_sequence;
                                       endp             ==  4'd0;
                                       bmRequestType    ==  8'd128;
                                       bRequest         ==  8'd8; 
-                                      wValue           ==  16'h0000;
-   	                              wIndex 	       ==  16'd0;   
+                                      wValue           ==  16'h0000;//0000_0000_0000_0001 
+   	                              wIndex 	       ==  16'd0;  
                                       wLength          ==  16'd1;     
                                       data_stage_pid_in ==  4'b1001;
                                       status_stage_pid_out ==  4'b0001;

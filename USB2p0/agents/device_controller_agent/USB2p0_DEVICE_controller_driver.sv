@@ -17,6 +17,8 @@ class USB2p0_DEVICE_controller_driver extends uvm_driver #(USB2p0_sequence_item)
       uvm_event         ack_done_ev;
       uvm_event         ack_done_driv;
 
+      bit [4:0]  act_crc5;          
+      bit [15:0] act_crc16;
       bit        word_if;
       bit [15:0] data16;
       bit [7:0]  data8;
@@ -37,7 +39,7 @@ class USB2p0_DEVICE_controller_driver extends uvm_driver #(USB2p0_sequence_item)
       bit [3:0]  isochronous_transfer_in_endp=6;
       bit [3:0]  isochronous_transfer_out_endp=7;
       bit [7:0]  token_crc5;
-      bit [15:0]  crc16;
+      bit [15:0] crc16;
       bit [3:0]  token_pid_setup;
       bit [3:0]  token_pid_data0;
       bit [3:0]  token_pid_data1;
@@ -260,6 +262,58 @@ class USB2p0_DEVICE_controller_driver extends uvm_driver #(USB2p0_sequence_item)
         end
        endtask
 
+      task calc_crc5(bit [6:0]addr, bit [3:0]endp);
+                  bit [10:0] token_bits;   
+                  bit [4:0] crc,crc5;          
+                  bit din;
+                  int i;
+                  `uvm_info("CRC5",$sformatf("ENTERED_INTO_CRC5_addr=%0h, endp=%0h",addr,endp),UVM_LOW)
+                  token_bits = {addr,endp};
+      
+                  crc=5'b11111;
+      
+                  for (i=10;i>=0;i--) begin
+                    din = token_bits[i] ^ crc[4];     
+                    crc = {crc[3:0],1'b0};           
+                    if (din) begin
+                     crc^= 5'b00101;               
+                    end
+                  end
+      
+                  act_crc5=~crc;
+                  `uvm_info("CRC5",$sformatf(" RECEIVED_CRC5 crc5=%0d crc=%0d",act_crc5,crc),UVM_LOW)
+       endtask
+
+     task calc_crc16(bit [7:0] bmRequestType, bRequest, bit [15:0] wValue,wIndex,wLength,crc16);
+        
+        bit [15:0] crc;
+        bit din;
+        bit [7:0] data[$];
+        int i,j;
+          `uvm_info("TOKEN_PKT",$sformatf("RECEIVEDbmrequest=%0h, brequest=%0h, wvalue=%0h,windex=%0h,wlength=%0h,crc16=%0h", bmRequestType,bRequest,wValue,wIndex,wLength,crc16),UVM_LOW)
+        crc=16'hFFFF;
+        `uvm_info("CRC_16",$sformatf("ENTERED_INTO_CRC16"),UVM_LOW)
+        data.push_back(bmRequestType);
+        data.push_back(bRequest);
+        data.push_back(wValue[7:0]);
+        data.push_back(wValue[15:8]);
+        data.push_back(wIndex[7:0]);
+        data.push_back(wIndex[15:8]);
+        data.push_back(wLength[7:0]);
+        data.push_back(wLength[15:8]);
+        
+        foreach(data[i]) begin
+          for(j=0;j<8;j++) begin
+            din = crc[15]^data[i][j];
+            crc = {crc[14:0],1'b0};
+                if( din) begin
+                 crc^=16'h8005;
+                end
+          end
+        end
+       act_crc16 = ~crc;            
+          `uvm_info("TOKEN_PKT",$sformatf("RECEIVED_CRC16 act_crc16=%0h,crc=%h",act_crc16,crc),UVM_LOW)
+  endtask
   
   task token_packet_received(USB2p0_sequence_item usb_seq_item,bit [DATA_WIDTH-1:0]device_dri_rxdata[$]);
        
@@ -278,6 +332,7 @@ class USB2p0_DEVICE_controller_driver extends uvm_driver #(USB2p0_sequence_item)
           token_addr = data_received.pop_front();
           token_endp = data_received.pop_front();
           token_crc5 = data_received.pop_front();
+          calc_crc5(token_addr,token_endp);
           `uvm_info("TOKEN_PKT",$sformatf("RECEIVED_SETUP_STAGE_TOKEN_PKT - TOKEN: PID=%0h ADDR=%0d ENDP=%0d CRC_5=%0d",token_pid_setup, token_addr, token_endp,token_crc5),UVM_LOW)
           data_packet(data_received);
        end
@@ -285,6 +340,7 @@ class USB2p0_DEVICE_controller_driver extends uvm_driver #(USB2p0_sequence_item)
           token_addr = data_received.pop_front();
           token_endp = data_received.pop_front();
           token_crc5 = data_received.pop_front();
+          calc_crc5(token_addr,token_endp);
           `uvm_info("TOKEN_PKT",$sformatf("RECEIVED_STATUS_STAGE_IN_TOKEN - PID=%0h ADDR=%0d ENDP=%0d CRC_5=%0d",token_pid_setup, token_addr, token_endp, token_crc5),UVM_LOW)
           // For the no-data control-transfer case, the host status stage is an IN token.
           // Logging and decoding it here confirms that the PHY forwarded the packet from
@@ -310,6 +366,7 @@ class USB2p0_DEVICE_controller_driver extends uvm_driver #(USB2p0_sequence_item)
           token_addr = data_received.pop_front();
           token_endp = data_received.pop_front();
           token_crc5 = data_received.pop_front();
+          calc_crc5(token_addr,token_endp);
           `uvm_info("TOKEN_PKT",$sformatf("RECEIVED_OUT_TOKEN_PKT - TOKEN: PID=%0h ADDR=%0d ENDP=%0d CRC_5=%0d",token_pid_setup, token_addr, token_endp,token_crc5),UVM_LOW)
            if(token_endp == control_transfer_endp)begin
               received_zlp_data(data_received);
@@ -379,6 +436,7 @@ endtask
            wlength[15:8]  = data_received.pop_front();
            crc16[7:0]  = data_received.pop_front();
            crc16[15:8]  = data_received.pop_front();
+           calc_crc16(bmRequest,bRequest,wValue,wIndex,wlength,crc16);
           `uvm_info("TOKEN_PKT",$sformatf("RECEIVED_DATA_PKT - TOKEN: PID=%0h bmrequest=%0h, brequest=%0h, wvalue=%0h,windex=%0h,wlength=%0h,crc16=%0h",token_pid_data0, bmRequest,bRequest,wValue,wIndex,wlength,crc16),UVM_LOW)
 
           /*if ((token_addr != device_address) || (token_endp > 6)) begin
@@ -399,49 +457,59 @@ endtask
               end
       
              valid_request = 0;
+
+            if((act_crc5 == token_crc5) && ( act_crc16 == crc16))begin
+            `uvm_info("CRC_CHECK",$sformatf("CRC5_MATCHED RX_CRC5=%0h ACT_CAL_CRC5=%0h CRC16_MATCHED RX_CRC16=%0h ACT_CAL_CRC16=%0h",token_crc5,act_crc5,crc16, act_crc16),UVM_LOW)
+
             // GET_STATUS
-            if(bmRequest == 8'd128 && bRequest == 8'd0)
+         if(bmRequest == 8'd128 && bRequest == 8'd0 && wlength == 16'd2 && wIndex == 16'd0 && wValue == 16'd0 && token_endp == 4'd0 && token_addr == 7'd0)
                valid_request = 1;
  
             // CLEAR_FEATURE
-            else if(bmRequest == 8'd0 && bRequest == 8'd1)
+          else if(bmRequest == 8'd0 && bRequest == 8'd1 && wlength == 16'd0 && wIndex == 16'd129 && wValue == 16'd0 && token_endp == 4'd0 && token_addr== 7'd0)
                valid_request = 1;
  
             // SET_FEATURE
-            else if(bmRequest == 8'd0 && bRequest == 8'd3)
+            else if(bmRequest == 8'd0 && bRequest == 8'd3 && wlength ==16'd0 && wIndex == 16'd0 && wValue ==16'd1 && token_endp == 4'd0 && token_addr == 7'd0)
                valid_request = 1;
  
             // SET_ADDRESS
-            else if(bmRequest == 8'd0 && bRequest == 8'd5)
+            else if(bmRequest == 8'd0 && bRequest == 8'd5 && wlength ==16'd0 && wIndex ==16'd0 && wValue == 16'd5 && token_endp == 4'd0 && token_addr ==7'd0)
                valid_request = 1;
  
             // GET_DESCRIPTOR
-            else if(bmRequest == 8'd128 && bRequest == 8'd6)
+            else if(bmRequest == 8'd128 && bRequest == 8'd6 && wlength ==16'd18 && wIndex == 16'd0 && wValue == 16'd1 && token_endp == 4'd0 && token_addr ==7'd0)
                valid_request = 1;
  
             // GET_CONFIGURATION
-            else if(bmRequest == 8'd128 && bRequest == 8'd8)
+            else if(bmRequest == 8'd128 && bRequest == 8'd8 && wlength == 16'd1 && wIndex ==16'd0 && wValue == 16'd0 && token_endp == 4'd0 && token_addr == 7'd0)
                valid_request = 1;
  
             // SET_CONFIGURATION
-            else if(bmRequest == 8'd0 && bRequest == 8'd9)
+            else if(bmRequest == 8'd0 && bRequest == 8'd9 && wlength == 16'd0 && wIndex ==16'd0  && wValue ==16'd1 && token_endp == 4'd0 && token_addr ==7'd0)
                valid_request = 1;
  
             // GET_INTERFACE
-            else if(bmRequest == 8'd129 && bRequest == 8'd10)
+            else if(bmRequest == 8'd129 && bRequest == 8'd10 && wlength == 16'd1 && wIndex ==16'd1 && wValue == 16'd0 && token_endp ==4'd0 && token_addr == 7'd0)
                valid_request = 1;
  
             // SET_INTERFACE
-            else if(bmRequest == 8'd1 && bRequest == 8'd11)
+            else if(bmRequest == 8'd1 && bRequest == 8'd11 && wlength == 16'd0 && wIndex == 16'd1 && wValue == 16'd1 && token_endp == 4'd0  && token_addr ==7'd0 )
                valid_request = 1;
+           end
+           else begin
+              `uvm_error("CRC_CHECK",$sformatf("CRC_MISMATCH RX_CRC5=%0h CAL_CRC5=%0h RX_CRC16=%0h CAL_CRC16=%0h",token_crc5,act_crc5,crc16,act_crc16))
+               send_handshake_packet(PID_STALL,req);
+              return;
+           end
  
             if(valid_request) begin
                `uvm_info("SETUP","VALID_STANDARD_REQUEST_RECEIVED", UVM_LOW)
-               send_handshake_packet(PID_ACK,req);
+                send_handshake_packet(PID_ACK,req);
             end
             else begin
                `uvm_error("SETUP", $sformatf("INVALID_REQUEST bmRequest=%0h bRequest=%0h", bmRequest,bRequest))
-               send_handshake_packet(PID_STALL,req);
+                send_handshake_packet(PID_STALL,req);
                return;
             end
  
@@ -477,18 +545,6 @@ endtask
        send_handshake_packet(PID_ACK,req);
    endtask
   
-    /*task send_handshake_packet(bit [3:0] handshake_pid,USB2p0_sequence_item usb_seq_item);
-        bit [7:0] pid_byte;
-	`uvm_info("DEVICE_DRIVER",$sformatf("handshake_pid=%0d",handshake_pid),UVM_LOW)
-         pid_byte = {handshake_pid, ~handshake_pid};
-	`uvm_info("DEVICE_DRIVER",$sformatf("handshake_pid=%0h",pid_byte),UVM_LOW);
-	 tx_data.push_back(pid_byte);
-	 `uvm_info("DEVICE_DRIVER",$sformatf("handshake_tx_pid_byte %0p",tx_data),UVM_LOW);
-	 send_to_utmi(tx_data,req);
-	 `uvm_info("DEVICE_CONTROLLER_DRIVER",$sformatf("COMPLETED_SEND_HANDSHAKE_PACKET"),UVM_LOW);
-    endtask*/
-  
-
   task send_handshake_packet(bit[3:0] handshake_pid, USB2p0_sequence_item usb_seq_item);
         bit [7:0] pid_byte;
 	`uvm_info("DEVICE_DRIVER",$sformatf("handshake_pid=%0d",handshake_pid),UVM_LOW)
@@ -816,7 +872,6 @@ endtask
       bit [15:0] tx_data_drive;
       @(posedge utmi_interface_tx.cb_utmi_device_controller_driver);
       `uvm_info("DATA",$sformatf("ENTERED_INTO_SEND_TO_UTMI_TX tx_data.size=%0d, tx_data=%0p",tx_data.size(),tx_data),UVM_LOW)
-       //tx_data.delete();
       if(usb_seq_item.op_mode == 2'b00 &&  (usb_seq_item.tx_valid ||  usb_seq_item.tx_validh) ) begin
      //     @(posedge utmi_interface_tx.cb_utmi_device_controller_driver);
         utmi_interface_tx.utmi_word_if        <= usb_seq_item.word_if;
@@ -838,7 +893,6 @@ endtask
               tx_data_drive[7:0]  = tx_data.pop_front();
               tx_data_drive[15:8] = tx_data.pop_front();
               //tx_data_drive = tx_data.pop_front();
-            tx_data.delete();
             wait(utmi_interface_tx.utmi_txready);
               utmi_interface_tx.utmi_txdata[7:0]  <= tx_data_drive[7:0];
               utmi_interface_tx.utmi_txdata[15:8] <= tx_data_drive[15:8];
