@@ -1,0 +1,24 @@
+
+# Backup files
+*~
+*.swp
+*.un~
+
+# Log files
+*.log
+
+# Waveform/database files
+*.wlf
+*.vcd
+*.fsdb
+qwave.db
+
+# Simulation directories
+work/
+INCA_libs/
+DVEfiles/
+simv*
+csrc/
+
+# Transcript
+transcript
