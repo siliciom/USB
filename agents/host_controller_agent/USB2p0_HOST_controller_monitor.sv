@@ -3,10 +3,12 @@ class USB2p0_HOST_controller_monitor extends uvm_monitor;
    `uvm_component_utils(USB2p0_HOST_controller_monitor)
 
 
-   virtual USB2p0_host_utmi_interface         utmi_interface_tx;
-   virtual USB2p0_host_utmi_interface         utmi_interface_rx;
-     // uvm_analysis_port #(USB2p0_sequence_item) host_tx_mon_ap;
-   //   uvm_analysis_port #(USB2p0_sequence_item) host_rx_mon_ap;
+      virtual USB2p0_host_utmi_interface         utmi_interface_tx;
+      virtual USB2p0_host_utmi_interface         utmi_interface_rx;
+
+      uvm_analysis_port #(USB2p0_sequence_item) host_tx_mon_ap;
+      uvm_analysis_port #(USB2p0_sequence_item) host_rx_mon_ap;
+
       USB2p0_sequence_item  usb_host_tx_seq_item;
       USB2p0_sequence_item  usb_host_rx_seq_item;
       USB2p0_sequence_item usb_host_seq_item;
@@ -27,8 +29,8 @@ class USB2p0_HOST_controller_monitor extends uvm_monitor;
  
       function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-        //host_tx_mon_ap = new("host_tx_mon_ap", this);
-       // host_rx_mon_ap = new("host_rx_mon_ap", this);
+         host_tx_mon_ap = new("host_tx_mon_ap", this);
+         host_rx_mon_ap = new("host_rx_mon_ap", this);
          usb_host_seq_item = USB2p0_sequence_item::type_id::create("usb_host_seq_item");
          usb_event_pool = uvm_event_pool::get_global_pool();
          ack_done_ev = usb_event_pool.get("ACK_DONE_EVENT");
@@ -57,7 +59,8 @@ task collect_utmi_tx_data();
    bit [15:0] first_byte_16;
 forever begin
    `uvm_info("HOST_MONITOR","ENTERED_INTO_COLLECT_UTMI_TX_SIGNALS",UVM_LOW)
-   usb_host_seq_item = USB2p0_sequence_item::type_id::create("usb_host_seq_item");
+    usb_host_seq_item = USB2p0_sequence_item::type_id::create("usb_host_seq_item");
+    tx_queue.delete();
    wait (utmi_interface_tx.utmi_txvalid && utmi_interface_tx.utmi_txready);
       @(negedge utmi_interface_tx.cb_utmi_host_controller_monitor);
       //@(negedge utmi_interface_tx.utmi_clk);
@@ -93,6 +96,7 @@ forever begin
       `uvm_info("HOST_MONITOR","WHILE_LOOP_EXIT_IN_HOST_MONITOR",UVM_LOW)
        `uvm_info("HOST_MONITOR","COLLECTED_UTMI_TX_SIGNALS",UVM_LOW)
        usb_host_seq_item.print();
+       host_tx_mon_ap.write(usb_host_seq_item);
      end
 endtask
 
@@ -105,7 +109,7 @@ task collect_from_utmi_rx();
 
 forever begin
    usb_host_rx_seq_item = USB2p0_sequence_item::type_id::create("usb_host_rx_seq_item");
-
+   tx_queue.delete();
    wait (utmi_interface_rx.utmi_rxvalid || utmi_interface_rx.utmi_rxvalidh);
      @(negedge utmi_interface_rx.cb_utmi_host_controller_monitor);
      usb_host_rx_seq_item.rx_valid       = utmi_interface_rx.utmi_rxvalid;
@@ -135,9 +139,20 @@ forever begin
                usb_host_rx_seq_item.rx_data.push_back(collect_data8);
               `uvm_info("HOST_MONITOR",$sformatf("8BIT_DATA_ON_RX = %p", usb_host_rx_seq_item.rx_data),UVM_LOW)
            end
+           //`uvm_info("HOST_MONITOR","HOST_RX_PACKET_COMPLETE",UVM_LOW)
+            //usb_host_rx_seq_item.print();
+            //host_rx_mon_ap.write(usb_host_rx_seq_item);
           end
            `uvm_info("HOST_MONITOR","HOST_RX_PACKET_COMPLETE",UVM_LOW)
             usb_host_rx_seq_item.print();
+	    if(usb_host_rx_seq_item.rx_data.size() > 0)
+            usb_host_rx_seq_item.rx_valid = 1'b1;
+            if(usb_host_rx_seq_item.word_if &&
+            usb_host_rx_seq_item.rx_data.size() > 0) begin
+	    usb_host_rx_seq_item.rx_valid  = 1'b1;
+            usb_host_rx_seq_item.rx_validh = 1'b1;
+            end
+            host_rx_mon_ap.write(usb_host_rx_seq_item);
           // if (usb_host_rx_seq_item.rx_data.size() == 1 &&  usb_host_rx_seq_item.rx_data[0] == 8'h2D) begin
           //        `uvm_info("DEVICE_MONITOR","ACK_RECEIVED_FROM_HOST_DATA_STAGE_COMPLETE",UVM_LOW)
           // end
