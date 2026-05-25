@@ -25,6 +25,7 @@ class usb2p0_host_fs_isochronous_out_sequence extends USB2p0_HOST_sequence;
 	                             // otg_dmpulldown   ==  1;
                                       otg_vbusvalid    ==  1'b1;
                                       iso_out_pid ==  4'b0001;
+                                      data_stage_pid_out ==  4'b1011;
                                       addr             ==  7'd0;
                                       endp             ==  4'd7;
                                       length == 7;

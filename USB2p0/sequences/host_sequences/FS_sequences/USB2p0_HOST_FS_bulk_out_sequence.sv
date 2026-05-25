@@ -25,12 +25,13 @@ class usb2p0_host_fs_bulk_out_sequence extends USB2p0_HOST_sequence;
 	                             // otg_dmpulldown   ==  1;
                                       otg_vbusvalid    ==  1'b1;
                                       bulk_out_pid ==  4'b0001;
+                                      data_stage_pid_out ==  4'b1011;
                                       addr             ==  7'd0;
                                       endp             ==  4'd2;
                                       length == 5;
                                       foreach(host_payload[i])
                                       !(host_payload[i] inside {8'h04, 8'h7F});
-                                      rx_valid         ==  'd0;
+                                      rx_valid         ==  'd1;
 	         		      rx_validh        ==  'd0; }) begin
 		`uvm_fatal("RAND_FAIL", "HOST_LS_data_stage_seq_Randomization failed")
 	    end 

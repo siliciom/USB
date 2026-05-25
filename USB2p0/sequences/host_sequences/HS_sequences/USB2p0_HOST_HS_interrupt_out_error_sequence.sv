@@ -1,14 +1,14 @@
-class usb2p0_host_hs_interrupt_out_sequence extends USB2p0_HOST_sequence;
+class usb2p0_host_hs_interrupt_out_error_sequence extends USB2p0_HOST_sequence;
   
-	`uvm_object_utils(usb2p0_host_hs_interrupt_out_sequence)
+	`uvm_object_utils(usb2p0_host_hs_interrupt_out_error_sequence)
   	USB2p0_sequence_item req;
 
-       function new(string name="usb2p0_host_hs_interrupt_out_sequence");
+       function new(string name="usb2p0_host_hs_interrupt_out_error_sequence");
             super.new(name);
        endfunction
 
     task body();
-           `uvm_info("HS_INTERRUPT_SEQUENCE","ENTERED_INTO_HS_INTERRUPT_SEQ ",UVM_LOW)
+           `uvm_info("HS_INTERRUPT_ERROR_SEQUENCE","ENTERED_INTO_HS_INTERRUPT_ERROR_SEQ ",UVM_LOW)
             req = USB2p0_sequence_item::type_id::create("req");
 	    if(!req.randomize() with {transfer_type == INTERRUPT_TRANSFER;
                                   direction   ==  'b0;
@@ -19,28 +19,26 @@ class usb2p0_host_hs_interrupt_out_sequence extends USB2p0_HOST_sequence;
 	                              fsls_serialmode  ==  1; 
 	                              suspend_n        ==  0;
 	                              term_select      ==  0;
-	                              xcvr_select      ==  2'b0;
+	                              xcvr_select      ==  0;
 	                              fsls_low_power   ==  0;
                                   // otg_dppulldown   ==  0;
 	                              // otg_dmpulldown   ==  1;
                                   otg_vbusvalid    ==  1'b1;
                                   interrupt_out_pid ==  4'b0001;
+                                  data_stage_pid_out ==  4'b1011;
                                   addr             ==  7'd0;
                                   endp             ==  4'd5;
-                                  length == 7;
+                                  rx_valid         ==  'd1;
+                                  length == 2055;
                                   foreach(host_payload[i])
                                   !(host_payload[i] inside {8'h04, 8'h7F});
-                                  rx_valid         ==  'd1;
 	         		              rx_validh        ==  'd1; }) begin
 		`uvm_fatal("RAND_FAIL", "HOST_LS_data_stage_seq_Randomization failed")
 	    end 
-                                  foreach(req.host_payload[i]) begin
-                                   `uvm_info("HOST_PAYLOAD", $sformatf("host_payload[%0d] = %0h,INTERRUPT_OUT =%d",i,req.host_payload[i],req.interrupt_out_pid), UVM_LOW)
-                                  end
           start_item(req);
           finish_item(req);
 	  req.print(); 
-           `uvm_info("HS_INTERRUPT_SEQUENCE","COMPLETED_HS_INTERRUPT_SEQ ",UVM_LOW)
+           `uvm_info("HS_INTERRUPT_IN_ERROR","COMPLETED_HS_INTERRUPT_ERROR_SEQ ",UVM_LOW)
 
     endtask
 endclass

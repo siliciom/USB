@@ -18,24 +18,24 @@ class USB2p0_DEVICE_hs_send_hs_sequence extends USB2p0_DEVICE_sequence;
 			           rx_validh      == 1;
 			           tx_valid       ==1;
                                    tx_validh      ==1;
-                                   blength             == 8'h12;
-                                   bdescriptors_type   == 8'h01;
-	                           bcd_usb             == 16'h0110;
-	                           bDevice_class       ==  8'h00;
-	                           bDevice_subclass    ==  8'h00; 
-	                           bDevice_protocol    ==  8'h00;
-	                           bMax_packetsize     ==  8'h40;
-	                           idvendor            == 16'h0781;
-	                           idproduct           == 16'h5567;
-	                           bcdDevice           == 16'h0126;
-	                           imanufacture        ==  8'h01;
-	                           iproduct            == 8'h02;
-                                   iserial_number      == 8'h03;
-                                   bNum_configuration  ==   8'h01;
-                                   length == 7;
-                                   foreach(device_payload[i])
-                                    //device_payload[i] == 'h10;
-                                   !(device_payload[i] inside {8'h04, 8'h7F});
+                                  // blength             == 8'h12;
+                                  // bdescriptors_type   == 8'h01;
+	                          // bcd_usb             == 16'h0110;
+	                          // bDevice_class       ==  8'h00;
+	                          // bDevice_subclass    ==  8'h00; 
+	                          // bDevice_protocol    ==  8'h00;
+	                          // bMax_packetsize     ==  8'h40;
+	                          // idvendor            == 16'h0781;
+	                          // idproduct           == 16'h5567;
+	                          // bcdDevice           == 16'h0126;
+	                          // imanufacture        ==  8'h01;
+	                          // iproduct            == 8'h02;
+                                  // iserial_number      == 8'h03;
+                                  // bNum_configuration  ==   8'h01;
+                                  // length == 7;
+                                  // foreach(device_payload[i])
+                                  //  //device_payload[i] == 'h10;
+                                  // !(device_payload[i] inside {8'h04, 8'h7F});
 			              }) begin
 				   `uvm_fatal("RAND_FAIL", "Randomization failed")
 			   end
