@@ -1,0 +1,35 @@
+# do run.do
+# USB2p0_FS_CT_set_configuration_test
+# ** Warning: (vlib-34) Library already exists at "work".
+# Errors: 0, Warnings: 1
+# QuestaSim-64 vmap 2025.2_1 Lib Mapping Utility 2025.06 Jun 25 2025
+# vmap work work 
+# ** Note: (vmap-220) 'modelsim.ini' is used as the ini file.
+# Modifying modelsim.ini
+# QuestaSim-64 vlog 2025.2_1 Compiler 2025.06 Jun 25 2025
+# Start time: 18:34:44 on May 25,2026
+# vlog -work work -sv "+define+UTMI_16BIT" top/USB2p0_UTMI_interface.sv top/USB2p0_PHY_interface.sv top/USB2p0_pkg.sv top/USB2p0_top.sv 
+# ** Note: (vlog-220) 'modelsim.ini' is used as the ini file.
+# -- Compiling interface USB2p0_host_utmi_interface
+# -- Compiling interface USB2p0_device_utmi_interface
+# -- Compiling interface USB2p0_PHY_interface
+# -- Compiling package USB2p0_pkg
+# ** Note: (vlog-2286) top/USB2p0_pkg.sv(3): Using implicit +incdir+C:/questasim64_2025.2_1/uvm-1.1d/../verilog_src/uvm-1.1d/src from import uvm_pkg
+# -- Importing package mtiUvm.uvm_pkg (uvm-1.1d Built-in)
+# -- Compiling interface USB2p0_host_utmi_interface
+# ** Warning: ** while parsing file included at top/USB2p0_top.sv(4)
+# ** at top/USB2p0_UTMI_interface.sv(1): (vlog-2275) Existing interface 'USB2p0_host_utmi_interface' at line 1 will be overwritten.
+# -- Compiling interface USB2p0_device_utmi_interface
+# ** Warning: ** while parsing file included at top/USB2p0_top.sv(4)
+# ** at top/USB2p0_UTMI_interface.sv(160): (vlog-2275) Existing interface 'USB2p0_device_utmi_interface' at line 160 will be overwritten.
+# -- Compiling interface USB2p0_PHY_interface
+# ** Warning: ** while parsing file included at top/USB2p0_top.sv(5)
+# ** at top/USB2p0_PHY_interface.sv(1): (vlog-2275) Existing interface 'USB2p0_PHY_interface' at line 1 will be overwritten.
+# -- Compiling module USB2p0_top
+# -- Importing package USB2p0_pkg
+# 
+# Top level modules:
+# 	USB2p0_top
+# End time: 18:34:46 on May 25,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 3
+# file129e4910
