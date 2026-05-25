@@ -20,6 +20,7 @@ class USB2p0_LS_interrupt_in_error_test extends USB2p0_base_test;
      `uvm_info("LS_CONTROL_TRANSFER_TEST","ENTERED_USB2p0_LS_INTERRUPT_IN_ERROR",UVM_LOW)
       phase.raise_objection(this);
         ls_interrupt_vseq.start(usb_environment.usb_vseqr);
+        #200000;
       phase.drop_objection(this);   
      `uvm_info("LS_CONTROL_TRANSFER_TEST","COMPLETED_USB2p0_LS_INTERRUPT_IN_ERROR",UVM_LOW)
   endtask
