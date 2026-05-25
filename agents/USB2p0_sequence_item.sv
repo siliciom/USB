@@ -81,7 +81,7 @@ class USB2p0_sequence_item extends uvm_sequence_item;
       rand recipient_e    recipient;
       rand transfers      transfer_type;
       //rand bRequest_e     bRequest; 
-      rand pid_e          setup_token_pid, setup_data_pid, handshake_pid_ack,handshake_pid_nack,handshake_pid_stall,data1_pid,token_pid_in, token_pid_out;
+      rand bit [3:0]      setup_token_pid, setup_data_pid, handshake_pid_ack,handshake_pid_nack,handshake_pid_stall,data1_pid,token_pid_in, token_pid_out;
       //rand bit [3:0]  setup_data_pid, setup_handshake_pid, data_token_pid,data_data_pid, data_handshake_pid, status_token_pid, status_data_pid, status_handshake_pid, start_of_frame_pid,interrupt_in_pid,interrupt_out_pid;
       //rand bit [3:0]  data_token_pid,data_data_pid,data_stage_pid_in,data_stage_pid_out,status_stage_pid_in,status_stage_pid_out,interrupt_in_pid,interrupt_out_pid;
       rand bit [3:0]   data_data_pid,data_stage_pid_in,data_stage_pid_out,status_stage_pid_in,status_stage_pid_out,interrupt_in_pid,interrupt_out_pid,iso_in_pid,iso_out_pid,bulk_in_pid,bulk_out_pid;
