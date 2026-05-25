@@ -19,7 +19,8 @@ class USB2p0_PHY_driver extends uvm_driver #(USB2p0_sequence_item);
 
    speed_state usb_speed;
 
- 
+   bit hs_eop_enable = 0;
+   static int tx_stuff_count = 0; 
    int               count;
    bit  	     decoded;
    bit  	     transition;
@@ -31,6 +32,8 @@ class USB2p0_PHY_driver extends uvm_driver #(USB2p0_sequence_item);
    bit               sync_detected;
    static bit [15:0] serial_reg;
    static bit [7:0]  token_pkt_pid;
+   static bit [7:0]  token_pkt_pid_addr;
+   static bit [15:0]  pid_addr;
    static bit [6:0]  token_pkt_addr;
    static bit [3:0]  token_pkt_endpoint;
    static bit [4:0]  token_pkt_crc;
@@ -53,8 +56,8 @@ class USB2p0_PHY_driver extends uvm_driver #(USB2p0_sequence_item);
    bit       [31:0]  pop_data[$];
    bit 	             strip_eop=0;
    int               send_task_count=0 ;
-   bit        [7:0]  pid_temp_high_setup,pid_temp_high_data,pid_temp_low_setup,pid_temp_low_data,pid_temp_handshake;
-  
+   bit        [7:0]  pid_temp_high_data,pid_temp_low_setup,pid_temp_low_data,pid_temp_handshake;
+   bit        [15:0] pid_temp_high_setup; 
    typedef enum bit [1:0] {
                            ACK_FROM_NONE   = 2'b00,
                            ACK_FROM_HOST   = 2'b01,
@@ -63,7 +66,7 @@ class USB2p0_PHY_driver extends uvm_driver #(USB2p0_sequence_item);
 
                            ack_source_e  ack_source;
   
-  typedef enum bit [3:0]{
+   typedef enum bit [3:0]{
 			    RESET        = 0,
 			    RX_WAIT      = 1,
 			    STRIP_SYNC   = 2,
@@ -175,79 +178,18 @@ class USB2p0_PHY_driver extends uvm_driver #(USB2p0_sequence_item);
       detect_device_pullup_from_device();
       detect_line_state();
     end
-
     seq_item_port.item_done();
   end
 endtask
 
-  /*task run_phase(uvm_phase phase);
-  bit rx_tx_threads_started;
-
-  `uvm_info("PHY_DRIVER",
-            $sformatf("ENTERED_INTO_PHY_DRIVER_RUN_PHASE "),
-            UVM_LOW)
-
-  @(host_utmi_interface_tx.cb_utmi_host_controller_driver);
-
-  if (!rx_tx_threads_started) begin
-    rx_tx_threads_started = 1;
-
-    fork
-      begin : host_tx_listener
-        forever begin
-          `uvm_info("PHY_DRIVER", $sformatf("COLLECTING_HOST_TX_DATA"), UVM_LOW)
-          fork
-            receiving_hc_tx_data(host_utmi_interface_tx);
-            receiving_dc_tx_data(device_utmi_interface_tx);
-          join_any
-          disable fork;
-        end
-      end
-
-      begin : host_rx_decoder
-        sending_hc_rx_data();
-      end
-
-     // begin : device_tx_listener
-     //   sending_dc_rx_data();
-     // end
-
-      //begin : device_rx_decoder
-      //  sending_dc_rx_data();
-      //end
-    join_none
-  end
-
-  forever begin
-    seq_item_port.get_next_item(req);
-
-    `uvm_info("PHY_DRIVER",
-              $sformatf("GET_NEXT_ITEM "),
-              UVM_LOW)
-
-    repeat (8)
-      @(posedge usb_phy_interface.cb_phy_driver);
-
-    usb_phy_interface.Vbus <= host_utmi_interface_tx.utmiotg_vbusvalid;
-
-    if (host_utmi_interface_tx.utmiotg_vbusvalid == 1) begin
-      `uvm_info("PHY_DRIVER",
-                $sformatf("PHY_DRIVER: PHY_Vbus=%b", usb_phy_interface.Vbus),
-                UVM_LOW)
-
-      @(posedge usb_phy_interface.cb_phy_driver);
-      detect_device_pullup_from_device();
-      detect_line_state();
-    end
-
-    seq_item_port.item_done();
-  end
-endtask*/
-
 //////////////////////////DETECT DEVICE PULL UP FROM DEVICE TO PHY//////////////////
-task detect_device_pullup_from_device();
-     `uvm_info("PHY_DR","ENTERED INTO DETECT DEVICE PULLUP FROM DEVICE TASK",UVM_LOW) 
 
+task detect_device_pullup_from_device();
+     `uvm_info("PHY_DR","ENTERED INTO DETECT DEVICE PULLUP FROM DEVICE TASK",UVM_LOW)
+     //#1;
+     wait ((device_utmi_interface_tx.utmiotg_dppulldown !== 1'bx) && (device_utmi_interface_tx.utmiotg_dmpulldown !== 1'bx));
+     `uvm_info("PHY_DRIVER",$sformatf("phy_driver_DP=%0b,dm =%0b",device_utmi_interface_tx.utmiotg_dppulldown,device_utmi_interface_tx.utmiotg_dmpulldown),UVM_LOW)
+      
       if (device_utmi_interface_tx.utmiotg_dppulldown && !device_utmi_interface_tx.utmiotg_dmpulldown) begin
     	usb_phy_interface.Dp<=1;
     	usb_phy_interface.Dm<=0;
@@ -259,6 +201,8 @@ task detect_device_pullup_from_device();
    	`uvm_info("PHY_DRIVER","LS SPEED IS DETECTING",UVM_LOW)
       end
 endtask
+
+
 
   
 task detect_line_state();
@@ -318,16 +262,21 @@ task receiving_dc_tx_data(virtual USB2p0_device_utmi_interface  device_utmi_inte
                 `uvm_info("PHY_DRV"," PHY_COLLECTED_DEVICE_UTMI_TX_SIGNALS",UVM_LOW)
                 if(word_if && tx_valid && tx_validh)begin
                    temp_16_bit = device_utmi_interface_tx.utmi_txdata;
+                        `uvm_info(get_full_name(), $sformatf("RECEIVNG_16BIT_FROM_UTMI_TX - %b",temp_16_bit),UVM_LOW)  
+                       if(temp_16_bit[7:0] == 8'h2d || temp_16_bit[7:0] == 8'hb4 || temp_16_bit[7:0] == 8'he1)begin
+                          ack_source = ACK_FROM_DEVICE;
+                          `uvm_info("PHY_DRV",$sformatf("ACK_SOURCE_FROM_DEVICE=%0d",ack_source),UVM_LOW)
+                       end
                    tx_fifo.push_back(temp_16_bit);
-                  `uvm_info(get_full_name(), $sformatf("RECEIVNG: SIE_PI - %p",tx_fifo),UVM_LOW)  
-                  `uvm_info(get_full_name(),$sformatf("RECEIVING       SIE_PI:word_if=%d,fslsserial_mode=%d,valid=%d,validh=%d,opmode=%d",word_if,fsls_serial_mode,tx_valid,tx_validh,opmode),UVM_LOW)
+                  `uvm_info(get_full_name(), $sformatf("RECEIVNG_16BIT_FROM_UTMI_TX_SIE_PI - %p",tx_fifo),UVM_LOW)  
+                  `uvm_info(get_full_name(),$sformatf("RECEIVING_SIE_PI:word_if=%d,fslsserial_mode=%d,valid=%d,validh=%d,opmode=%d",word_if,fsls_serial_mode,tx_valid,tx_validh,opmode),UVM_LOW)
                 end
                 else if(!word_if && tx_valid )begin
                       tx_data_count++;
                       `uvm_info("PHY_DRV"," COLLECTING_DEVICE_UTMI_TX_DATA_8_bit",UVM_LOW)
                       //temp_8_bit = device_utmi_interface_tx.utmi_txdata[7:0];
                       temp_8_bit = device_utmi_interface_tx.utmi_txdata;
-                       if(temp_8_bit == 8'h2d || temp_8_bit == 8'hb4)begin
+                       if(temp_8_bit == 8'h2d || temp_8_bit == 8'hb4 || temp_8_bit == 8'he1)begin
                           ack_source = ACK_FROM_DEVICE;
                           `uvm_info("PHY_DRV",$sformatf("ACK_SOURCE_FROM_DEVICE=%0d",ack_source),UVM_LOW)
                        end
@@ -391,9 +340,13 @@ task receiving_hc_tx_data(virtual USB2p0_host_utmi_interface  host_utmi_interfac
                 `uvm_info("PHY_DRV"," PHY_COLLECTED_HOST_UTMI_TX_SIGNALS",UVM_LOW)
                 if(word_if && tx_valid && tx_validh)begin
                    temp_16_bit = host_utmi_interface_tx.utmi_txdata;
+                       if(temp_16_bit[7:0] == 8'h2d)begin
+                          ack_source = ACK_FROM_HOST;
+                          `uvm_info("PHY_DRV",$sformatf("ACK_SOURCE_FROM_HOST=%0d",ack_source),UVM_LOW)
+                       end
                    tx_fifo.push_back(temp_16_bit);
-                  `uvm_info(get_full_name(), $sformatf("RECEIVNG: SIE_PI - %p",tx_fifo),UVM_LOW)  
-                  `uvm_info(get_full_name(),$sformatf("RECEIVING       SIE_PI:word_if=%d,fslsserial_mode=%d,valid=%d,validh=%d,opmode=%d",word_if,fsls_serial_mode,tx_valid,tx_validh,opmode),UVM_LOW)
+                  `uvm_info(get_full_name(), $sformatf("RECEIVNG_16BIT_FROM_UTMI_TX_HOST: SIE_PI - %p",tx_fifo),UVM_LOW)  
+                  `uvm_info(get_full_name(),$sformatf("RECEIVING_SIE_PI:word_if=%d,fslsserial_mode=%d,valid=%d,validh=%d,opmode=%d",word_if,fsls_serial_mode,tx_valid,tx_validh,opmode),UVM_LOW)
                 end
                 else if(!word_if && tx_valid )begin
                       tx_data_count++;
@@ -507,13 +460,22 @@ task tx_state_machine(bit tx_sm_valid,tx_sm_ready,pid_flag,tx_sm_validh, tx_sm_w
 		                `uvm_info(get_full_name(),$sformatf("REG FULL & READY :reg_full=%d, ready=%d",tx_sm_hold_reg_full,tx_sm_ready),UVM_LOW)
 		                 while(data_tx_sm.size() > 0)begin 
 		                   if(tx_sm_valid && tx_sm_validh)begin 
-			             if(pid_temp_high_setup == 0) begin
+			            // if(pid_temp_high_setup == 0) begin
 			                pid_temp_high_setup = data_tx_sm.pop_front();
 			                `uvm_info(get_full_name(),$sformatf("PID_VALUE******************************* FOR SETUP =%b",pid_temp_high_setup),UVM_LOW)
-			                if(pid_temp_high_setup == {USB2p0_sequence_item::PID_SETUP, ~USB2p0_sequence_item::PID_SETUP})begin
+
+                                    if((pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_SETUP, ~USB2p0_sequence_item::PID_SETUP}) || (pid_temp_high_setup[7:0] ==                                    {USB2p0_sequence_item::PID_DATA1, ~USB2p0_sequence_item::PID_DATA1}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_OUT, ~USB2p0_sequence_item::PID_OUT}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_DATA0,~USB2p0_sequence_item::PID_DATA0}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_IN, ~USB2p0_sequence_item::PID_IN}) ||  (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_ACK,~USB2p0_sequence_item::PID_ACK}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_STALL,~USB2p0_sequence_item::PID_STALL})) begin 
+
 			                   send_sync(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
 			                   data_tx_sm.push_front(pid_temp_high_setup);
+
+			                if(pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_SETUP, ~USB2p0_sequence_item::PID_SETUP})begin
+			                   //send_sync(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
+			                   //data_tx_sm.push_front(pid_temp_high_setup);
 			                   for(int i=0; i<2; i++)begin 
+                                         `uvm_info("DEBUG_TX_DATA_LOAD_WORD_IF_ONE",$sformatf("WORD_IF_ONE_after_PID_CHECK_data_tx_sm_size=%0d data_tx_sm=%0p", data_tx_sm.size(),data_tx_sm),UVM_LOW)
+			                   //for(int i=data_tx_sm.size(); i<= data_tx_sm.size(); i--)begin
+                                             // if(i ==0)break; 
 			    		      temp_16bit_data = data_tx_sm.pop_front();
 			     		      tx_fifo_out.push_back(temp_16bit_data);
 			                      `uvm_info(get_full_name(),$sformatf("16_BIT_DATA tx_fifo_out =%p,valid=%d,validh=%d",tx_fifo_out,tx_sm_valid,tx_sm_validh),UVM_LOW)
@@ -531,13 +493,17 @@ task tx_state_machine(bit tx_sm_valid,tx_sm_ready,pid_flag,tx_sm_validh, tx_sm_w
           				   end 
                                            eop_generate(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
             				end 
-				     end  //setup begin_end
-                		     pid_temp_high_data = data_tx_sm.pop_front();
-                		     `uvm_info(get_full_name(),$sformatf("PID_VALUE**************************************** FOR DATA =%b",pid_temp_high_data),UVM_LOW)
-                 		     if(pid_temp_high_data == {USB2p0_sequence_item::PID_DATA0, ~USB2p0_sequence_item::PID_DATA0})begin
-                  		       send_sync(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
-                                       data_tx_sm.push_front(pid_temp_high_data);
-                   		       for(int i=0; i<6; i++)begin
+				    // end  //setup begin_end
+
+                		     //pid_temp_high_data = data_tx_sm.pop_front();
+                		     //`uvm_info(get_full_name(),$sformatf("PID_VALUE**************************************** FOR DATA =%b",pid_temp_high_data),UVM_LOW)
+                 		     else if((pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_DATA0, ~USB2p0_sequence_item::PID_DATA0}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_IN, ~USB2p0_sequence_item::PID_IN}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_DATA1, ~USB2p0_sequence_item::PID_DATA1}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_OUT, ~USB2p0_sequence_item::PID_OUT}))begin
+                  		       //send_sync(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
+                                       //data_tx_sm.push_front(pid_temp_high_data);
+                   		       //for(int i=0; i<6; i++)begin
+                                     `uvm_info("DEBUG_TX_DATA_LOAD_WORD_IF_ONE",$sformatf("WORD_IF_ONE_after_PID_CHECK_FOR_DATA0_data_tx_sm_size=%0d data_tx_sm=%0p", data_tx_sm.size(),data_tx_sm),UVM_LOW)
+                   		       for(int i=data_tx_sm.size(); i<=data_tx_sm.size(); i--)begin
+                                          if(i==0) break;
                    			 temp_16bit_data = data_tx_sm.pop_front();
                      			 tx_fifo_out2.push_back(temp_16bit_data);
                     			 `uvm_info(get_full_name(),$sformatf("16_BIT_DATA tx_fifo_out =%p,valid=%d,validh=%d",tx_fifo_out2,tx_sm_valid,tx_sm_validh),UVM_LOW)
@@ -551,14 +517,44 @@ task tx_state_machine(bit tx_sm_valid,tx_sm_ready,pid_flag,tx_sm_validh, tx_sm_w
               				 end
               			       end
            			     end
-                                     eop_generate(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
+                                      eop_generate(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
                  		   end
+                                     //eop_generate(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
+                       //////////////////////////////////////////////////////////////////////////////////////////////////////
+			            else if((pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_ACK, ~USB2p0_sequence_item::PID_ACK}) || (pid_temp_high_setup[7:0] == {USB2p0_sequence_item::PID_STALL, ~USB2p0_sequence_item::PID_STALL}))begin
+			                   //send_sync(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
+			                   //data_tx_sm.push_front(pid_temp_high_setup);
+			                   //for(int i=0; i<2; i++)begin 
+                                         //`uvm_info("DEBUG_TX_DATA_LOAD_WORD_IF_ONE",$sformatf("WORD_IF_ONE_after_PID_CHECK_data_tx_sm_size=%0d data_tx_sm=%0p", data_tx_sm.size(),data_tx_sm),UVM_LOW)
+			                   //for(int i=data_tx_sm.size(); i<= data_tx_sm.size(); i--)begin
+                                             // if(i ==0)break; 
+			    		      temp_16bit_data = data_tx_sm.pop_front();
+			     		      tx_fifo_out.push_back(temp_16bit_data);
+			                      `uvm_info(get_full_name(),$sformatf("16_BIT_DATA tx_fifo_out =%p,valid=%d,validh=%d",tx_fifo_out,tx_sm_valid,tx_sm_validh),UVM_LOW)
+			                      if (tx_fifo_out.size()>0)begin 
+					         `uvm_info("DEBUG_TX_DATA_LOAD",$sformatf("tx_fifo_size=%0d",tx_fifo_out.size()),UVM_LOW) 
+			                         for(int j = 0; j < tx_fifo_out.size(); j++ )begin
+						   `uvm_info("DEBUG_TX_DATA_LOAD",$sformatf("tx_fifo_size=%0d",tx_fifo_out.size()),UVM_LOW) 
+				                   if(tx_sm_valid && tx_sm_validh)begin 
+				                      tx_16bit_piso_data = tx_fifo_out.pop_front();
+				                      tx_size = 16;
+				                      tx_piso(tx_16bit_piso_data,tx_size);
+				 		   end
+		      				 end
+		    			      end
+          				   //end 
+                                           eop_generate(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
+            				end 
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                    end
 			          end //tx_sm_validh =1 begin_end
                                   else if( tx_sm_valid && !tx_sm_validh) begin
               			    pid_temp_low_setup = data_tx_sm.pop_front();
                			    `uvm_info(get_full_name(),$sformatf("PID_VALUE_8bit******************************* FOR SETUP =%b",pid_temp_low_setup),UVM_LOW)
 				    //ACK_PID_CHECK
-                                    if(pid_temp_low_setup == {USB2p0_sequence_item::PID_ACK,~USB2p0_sequence_item::PID_ACK})begin
+                                    if((pid_temp_low_setup == {USB2p0_sequence_item::PID_ACK,~USB2p0_sequence_item::PID_ACK}) || (pid_temp_low_setup == {USB2p0_sequence_item::PID_STALL,~USB2p0_sequence_item::PID_STALL}))begin
                                        `uvm_info(get_full_name(),$sformatf("PID_VALUE******************************* FOR SETUP =%b4bit=%b,inv4bit=%b",pid_temp_low_setup,USB2p0_sequence_item::PID_ACK,~USB2p0_sequence_item::PID_ACK),UVM_LOW) 
                                        send_sync(tx_sm_word_if,tx_sm_valid,tx_sm_validh);
                   		       data_tx_sm.push_front(pid_temp_low_setup);
@@ -808,13 +804,22 @@ endtask
   
 task eop_generate(bit word_if,valid,validh);
 
-	  bit [7:0]  hs_eop,fs_ls_eop;
-	  bit [7:0] tx_fifo_eop[$];
-	  bit [7:0]  tx_8bit_piso_data;
-	  int        tx_size;
+	  //bit [7:0]  hs_eop;
+	  bit [7:0]   fs_ls_eop;
+	  bit [15:0]  hs_eop;
+	  bit [DATA_WIDTH-1:0]  tx_fifo_eop[$];
+	  bit [7:0]   tx_8bit_piso_data;
+	  bit [15:0]  tx_16bit_piso_data;
+	  int         tx_size;
+          `uvm_info(get_full_name(),"ENTER_INTO_TX_SEND_EOP_TASK",UVM_LOW)
 
 	 if(word_if && valid && validh) begin
-	    hs_eop = 8'b0111_1111;
+            `uvm_info(get_full_name(),"ENTER_INTO_TX_SEND_EOP_TASK_WORD_IF_ONE_CONDTION",UVM_LOW)
+             tx_stuff_count =0;
+             hs_eop_enable =1;
+	     //hs_eop = 8'b0111_1111;
+	    hs_eop = 16'b0000_0000_0111_1111;
+	   // hs_eop = 16'b0000_0000_0000_0100;
 	    tx_fifo_eop.push_back(hs_eop);
 	    `uvm_info(get_full_name(),$sformatf("EOP_HS = %b", hs_eop), UVM_LOW)
 	  end
@@ -829,9 +834,12 @@ task eop_generate(bit word_if,valid,validh);
 	     for(int j = 0; j < tx_fifo_eop.size(); j++) begin
 
 	       if(valid && validh) begin
-	  	 tx_8bit_piso_data = tx_fifo_eop.pop_front();
-		 tx_size = 8;
-		 tx_piso(tx_8bit_piso_data, tx_size);
+	  	 tx_16bit_piso_data = tx_fifo_eop.pop_front();
+		 tx_size = 16;
+		 tx_piso(tx_16bit_piso_data, tx_size);
+	  	 //tx_8bit_piso_data = tx_fifo_eop.pop_front();
+		 //tx_size = 8;
+		 //tx_piso(tx_8bit_piso_data, tx_size);
 	      end
 	      else if(valid && !validh) begin
 		  tx_8bit_piso_data = tx_fifo_eop.pop_front();
@@ -840,7 +848,7 @@ task eop_generate(bit word_if,valid,validh);
               end
           end
         end
-
+        hs_eop_enable =0;
 endtask
 
   
@@ -858,55 +866,73 @@ task tx_piso( input bit[15:0]piso_data_in,int size);
 	      end  
 endtask  
   
-/* task tx_bit_stuffing(input bit data_in);
-  bit data_out;
-  static int one_count = 0;
-  // If 6 ones already seen → insert stuffed 0 FIRST
-  if (one_count == 6) begin
-    data_out  = 0;   // stuffed bit
-    one_count = 0;
-    `uvm_info("STUFF","Inserted stuffed 0",UVM_LOW);
-    return;  // ❗ IMPORTANT: do not consume current input yet
-  end
-
-  // Normal data flow
-  data_out = data_in;
-
-  if (data_in == 1)
-    one_count++;
-  else
-    one_count = 0;
-
-  `uvm_info("STUFF",$sformatf("data_in=%0b data_out=%0b count=%0d",
-                             data_in, data_out, one_count),UVM_LOW);
-
-   tx_nrzi_encoder(data_out);
-endtask*/
   
-task tx_bit_stuffing(input data_in_stuffing);
-    
-    static bit [2:0] count; //using static keyword it will increment the count. without static inside task by default it will be automatic it will create diff memory each time so count will be re-initialize.
-    bit data_out_stuffing;
-      
-    `uvm_info(get_full_name(), $sformatf("ENTERED_INTO_TX_BIT_STUFFING_TASK data_in_stuffing=%0d",data_in_stuffing),UVM_LOW)        
 
-    if(data_in_stuffing == 1)
-       count=count+1;
-    else
-       count=0;
-     
-    //if(count == 7)begin
-    if(count == 6)begin
-       	data_out_stuffing = 0;
-       	count =0;
-       // return;
-    end
-    else
+/*task tx_bit_stuffing(input bit data_in_stuffing);
+
+   bit data_out_stuffing;
+
+   `uvm_info(get_full_name(),
+      $sformatf("ENTERED_INTO_TX_BIT_STUFFING_TASK data_in_stuffing=%b",
+      data_in_stuffing), UVM_LOW)
+   if(hs_eop_enable) begin
       data_out_stuffing = data_in_stuffing;
+      `uvm_info("HS_EOP", $sformatf("HS_EOP_BYPASS_STUFFING data=%b", data_out_stuffing), UVM_LOW)
+      tx_nrzi_encoder(data_out_stuffing);
+      return;
+   end
 
-      `uvm_info(get_full_name(),$sformatf("BIT_STUFFING:data_in_stuffing = %0b, data_out_stuffing = %0b,count=%0d", data_in_stuffing,data_out_stuffing,count),UVM_LOW)
-       tx_nrzi_encoder(data_out_stuffing);
-endtask 
+   if(data_in_stuffing == 1) begin
+      tx_stuff_count++;
+      if(tx_stuff_count == 6) begin
+         data_out_stuffing = 0;
+         `uvm_info(get_full_name(), "INSERTING_STUFFED_ZERO", UVM_LOW)
+         tx_nrzi_encoder(data_out_stuffing);
+         tx_stuff_count = 0;
+         return;
+      end
+      else begin
+         data_out_stuffing = 1;
+      end
+   end
+   else begin
+      tx_stuff_count = 0;
+      data_out_stuffing = 0;
+   end
+   `uvm_info(get_full_name(), $sformatf("BIT_STUFFING:data_in_stuffing = %b, data_out_stuffing = %b,count=%0d", data_in_stuffing,data_out_stuffing,tx_stuff_count), UVM_LOW)
+   tx_nrzi_encoder(data_out_stuffing);
+
+endtask*/
+
+task tx_bit_stuffing(input bit data_in_stuffing);
+
+   bit data_out_stuffing;
+
+   `uvm_info(get_full_name(),$sformatf("ENTERED_INTO_TX_BIT_STUFFING_TASK data_in_stuffing=%b", data_in_stuffing), UVM_LOW)
+   if(hs_eop_enable) begin
+      data_out_stuffing = data_in_stuffing;
+      `uvm_info("HS_EOP",$sformatf("HS_EOP_BYPASS_STUFFING data=%b", data_out_stuffing), UVM_LOW)
+      tx_nrzi_encoder(data_out_stuffing);
+      return;
+   end
+
+   data_out_stuffing = data_in_stuffing;
+   tx_nrzi_encoder(data_out_stuffing);
+
+   if(data_in_stuffing == 1)
+      tx_stuff_count++;
+   else
+      tx_stuff_count = 0;
+
+   if(tx_stuff_count == 6) begin
+      `uvm_info(get_full_name(),"INSERTING_STUFFED_ZERO", UVM_LOW)
+      tx_nrzi_encoder(0);
+      tx_stuff_count = 0;
+   end
+   `uvm_info(get_full_name(),$sformatf("BIT_STUFFING:data_in_stuffing=%b count=%0d",data_in_stuffing,tx_stuff_count), UVM_LOW)
+
+endtask
+
   
   
 task tx_nrzi_encoder(input bit nrzi_input);
@@ -973,7 +999,39 @@ task nrzi_decoder(bit dp,dm);
      bit_unstuffing(decoded);   
 endtask
 
- task bit_unstuffing(input bit data_in_unstuffing);
+task bit_unstuffing(input bit data_in_unstuffing);
+
+   bit data_out_unstuffing;
+
+   static int one_count = 0;
+   `uvm_info("NRZI_DECODER","ENTERED_INTO_BIT_UNSTUFFING_TASK",UVM_LOW);
+
+   if(one_count == 6) begin
+
+      if(data_in_unstuffing == 0) begin
+         `uvm_info("BIT_UNSTUFF","REMOVING_STUFFED_ZERO", UVM_LOW)
+         one_count = 0;
+         return;
+      end
+      else begin
+         `uvm_info("BIT_UNSTUFF","EXPECTED_STUFFED_ZERO_GOT_ONE",UVM_LOW)
+         one_count = 0;
+      end
+   end
+     data_out_unstuffing = data_in_unstuffing;
+    `uvm_info("BIT_UNSTUFF",$sformatf("PASSING_REAL_BIT=%b", data_out_unstuffing),UVM_LOW)
+     rx_state_machine(data_out_unstuffing);
+
+   if(data_in_unstuffing == 1)
+      one_count++;
+   else
+      one_count = 0;
+      `uvm_info("BIT_UNSTUFF", $sformatf("ONE_COUNT=%0d", one_count),UVM_LOW)
+endtask
+
+
+//////////////////////////////////////////////////////////////////////
+/* task bit_unstuffing(input bit data_in_unstuffing);
 
   bit data_out_unstuffing;
   static int un_count = 0;
@@ -982,7 +1040,19 @@ endtask
   `uvm_info("NRZI_DECODER","ENTERED_INTO_BIT_UNSTUFFING_TASK",UVM_LOW);
 
    if (skip_next) begin
-       `uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_BEFORE_ASSIGNED_TO_UNSTUFFING_INPUT: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)                        
+       `uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_BEFORE_ASSIGNED_TO_UNSTUFFING_INPUT: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)     
+ //////////////////////////////////////
+            if(data_in_unstuffing == 1 && word_if) begin
+            `uvm_info("HS_EOP", "HS_EOP_DETECTED",UVM_LOW);
+             skip_next = 0;
+             un_count = 0;
+             // PASS THE 7th ONE
+             data_out_unstuffing = data_in_unstuffing;
+             `uvm_info("HS_EOP",$sformatf("HS_EOP data_out=%b",data_out_unstuffing), UVM_LOW);
+             rx_state_machine(data_out_unstuffing);
+             return;
+           end
+////////////////////////////////////////////
       if (data_in_unstuffing != 0) //begin
         `uvm_error("UNSTUFF", "Expected_stuffed_0_but_got 1");
      // end
@@ -1003,93 +1073,51 @@ endtask
      skip_next = 1; 
      //return;
   end
-
   data_out_unstuffing = data_in_unstuffing;
   `uvm_info("BIT_UNSTUFF",$sformatf("data_out=%b",data_out_unstuffing),UVM_LOW);
   rx_state_machine(data_out_unstuffing);
-endtask
- 
-/* task bit_unstuffing(input bit data_in_unstuffing);
-      bit             data_out_unstuffing;
-      static bit[2:0] un_count = 0;
-     // static bit[2:0] un_count;
-    
-    `uvm_info("NRZI_DECODER",$sformatf("ENTERED_INTO_BIT_UNSTUFFING_TASK "),UVM_LOW); 
-      if(un_count==6 || data_in_unstuffing == 1)
-        un_count = un_count+1;
-      else
-        un_count = 0;
- 
-       `uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_BEFORE_ASSIGNED_TO_UNSTUFFING_INPUT: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)                        
-      if(un_count == 7) begin   
-      //if(un_count == 6) begin   
-       `uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_INSIDE_COUNT_CONDTION_VALUE: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)                        
-           data_out_unstuffing = 1;
-           un_count =0;
-      end
-      else begin
-        //else if(data_in_unstuffing == 0 || data_in_unstuffing == 1)begin
-       `uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_BEFORE_ASSIGNED_TO_UNSTUFFING_OUTPUT_ELSE_PART_FOR_ZERO_VALUE: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)                        
-        data_out_unstuffing = data_in_unstuffing;
-        `uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING: data_out_unstuffing=%b",data_out_unstuffing),UVM_LOW)                        
-         rx_state_machine(data_out_unstuffing);
-      end
-       //`uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_BEFORE_ASSIGNED_TO_UNSTUFFING_OUTPUT_ELSE_PART_FOR_ZERO_VALUE: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)                        
 endtask*/
+ 
   
-
-
   task rx_sipo(bit serial_bit);
 
-   width = word_if ? 16 : 8;
-   `uvm_info("SIPO",$sformatf("RX_WIDTH = %0d WORD_IF=%0d", width,word_if),UVM_LOW)
-   rx_shift_reg = {serial_bit, rx_shift_reg[15:1]};
+   bit [15:0] sipo_data_16bit;
 
+   width = word_if ? 16 : 8;
+   `uvm_info("SIPO",$sformatf("RX_WIDTH = %0d WORD_IF=%0d",width,word_if),UVM_LOW)
+   rx_shift_reg = {serial_bit, rx_shift_reg[15:1]};
    `uvm_info("SIPO",$sformatf("RX_SHIFT_REG = %0b",rx_shift_reg),UVM_LOW)
-   `uvm_info("SIPO",$sformatf("RX_COUNT_SIPO = %0d", rx_bit_count),UVM_LOW)
+   `uvm_info("SIPO",$sformatf("RX_COUNT_SIPO = %0d",rx_bit_count),UVM_LOW)
    if(rx_bit_count == width) begin
       if(width == 8) begin
          sipo_data = rx_shift_reg[15:8];
-         `uvm_info("SIPO",$sformatf("SIPO_DATA_8BIT = %0d", sipo_data),UVM_LOW)
+         `uvm_info("SIPO",$sformatf("SIPO_DATA_8BIT = %0d",sipo_data),UVM_LOW)
          if((sipo_data == 8'b00000100) && !word_if) begin
-            `uvm_info("SIPO","EOP DETECTED IN 8BIT MODE",UVM_LOW)
+            `uvm_info("SIPO","EOP_DETECTED_IN_8BIT_MODE",UVM_LOW)
             eop_detected = 1;
-            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_EOP = %p",rx_data_queue),UVM_LOW)
-           // rx_shift_reg = 0;
-           // rx_bit_count = 0;
+            `uvm_info("SIPO", $sformatf("QUEUE_AFTER_EOP = %p",rx_data_queue), UVM_LOW)
          end
          else begin
             rx_data_queue.push_back(sipo_data);
-            `uvm_info("SIPO",$sformatf("PARALLEL_DATA_QUEUE = %0p", rx_data_queue),UVM_LOW)
+            `uvm_info("SIPO",$sformatf("PARALLEL_DATA_QUEUE = %0p",rx_data_queue),UVM_LOW)
          end
       end
       else begin
-         sipo_data_high = rx_shift_reg[15:8];
-         sipo_data_low  = rx_shift_reg[7:0];
-         `uvm_info("SIPO",$sformatf("SIPO_DATA_HIGH = %0d", sipo_data_high),UVM_LOW)
-         `uvm_info("SIPO",$sformatf("SIPO_DATA_LOW  = %0d", sipo_data_low),UVM_LOW)
-         if(sipo_data_high == 8'h7F && word_if) begin
-            `uvm_info("SIPO","EOP DETECTED IN HIGH BYTE",UVM_LOW)
-             rx_data_queue.push_back(sipo_data_low);
+         sipo_data_16bit = rx_shift_reg;
+         `uvm_info("SIPO",$sformatf("SIPO_DATA_16BIT = %b",sipo_data_16bit),UVM_LOW)
+         if((sipo_data_16bit == 16'b0000_0000_0111_1111) && word_if) begin
+            `uvm_info("SIPO","HS_EOP_DETECTED",UVM_LOW)
             eop_detected = 1;
             `uvm_info("SIPO",$sformatf("QUEUE_AFTER_EOP = %p",rx_data_queue),UVM_LOW)
          end
-         else if(sipo_data_low == 8'h7F && word_if) begin
-            `uvm_info("SIPO","EOP DETECTED IN LOW BYTE",UVM_LOW)
-            rx_data_queue.push_back(sipo_data_high);
-            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_HIGH_PUSH = %p",rx_data_queue),UVM_LOW)
-            eop_detected = 1;
-         end
          else begin
-            rx_data_queue.push_back(sipo_data_high);
-            rx_data_queue.push_back(sipo_data_low);
-            `uvm_info("SIPO",$sformatf("RX_PARALLEL_DATA = %0p", rx_data_queue),UVM_LOW)
+            rx_data_queue.push_back(sipo_data_16bit);
+            `uvm_info("SIPO",$sformatf("RX_PARALLEL_DATA = %0p",rx_data_queue),UVM_LOW)
          end
       end
       rx_bit_count = 0;
    end
    rx_bit_count++;
-
 endtask
   
 task rx_state_machine(bit data_out_unstuffing);
@@ -1146,13 +1174,28 @@ task rx_state_machine(bit data_out_unstuffing);
 		       pop_data.push_back(collect_sync);
    	               `uvm_info("RX_STATE_MACHINE", $sformatf("collect_sync=%b,WORD_IF=%d,SERIAL_REG=%d",collect_sync,word_if,serial_reg), UVM_LOW)
 		       pop_data.delete();
-		       `uvm_info("RX_STATE_MACHINE", $sformatf("COLLECT_DATA AFTER DELETEING VALUE=%0p queue_size=%d",pop_data,pop_data.size()), UVM_LOW)
+		       `uvm_info("RX_STATE_MACHINE", $sformatf("SYNC_32BIT_DATA_AFTER_DELETEING =%0p queue_size=%d",pop_data,pop_data.size()), UVM_LOW)
 		       sync_detected=1;
 		       count=0;
 		    end
-		    if(sync_detected==1'b1)
-		       rx_present_state=STRIP_SYNC;
-		    end //begin
+////////////////////////////////////////////////////
+            if(sync_detected == 1'b1) begin
+              if(word_if) begin
+               `uvm_info("RX_STATE_MACHINE", $sformatf("WORD_IF=1_DIRECTLY_MOVING_TO_RX_DATA"), UVM_LOW)
+                data = 1'b1;
+                rx_present_state = RX_DATA;
+              end
+             else begin
+                `uvm_info("RX_STATE_MACHINE",$sformatf("WORD_IF=0_MOVING_TO_STRIP_SYNC"), UVM_LOW)
+                 rx_present_state = STRIP_SYNC;
+             end
+           end
+         end
+//////////////////////////////////////////////////////
+
+		  //  if(sync_detected==1'b1)
+		    //   rx_present_state=STRIP_SYNC;
+		    //end //begin
         STRIP_SYNC:begin
 		     RXActive=1'b1;
                      device_utmi_interface_rx.utmi_rxactive <= RXActive;
@@ -1165,10 +1208,10 @@ task rx_state_machine(bit data_out_unstuffing);
 		        token_pkt_pid = { data_out_unstuffing,token_pkt_pid[7:1]};  
 		        `uvm_info("RX_STATE_MACHINE", $sformatf("PID_OUT= %0p,WORD_IF=%d",token_pkt_pid,word_if), UVM_LOW)
 		     end
-		     else if(word_if)begin
-		       token_pkt_pid = { data_out_unstuffing,token_pkt_pid[7:1]};  
-		       `uvm_info("RX_STATE_MACHINE", $sformatf("PID_OUT= %0p",token_pkt_pid), UVM_LOW)
-		     end
+		     //else if(word_if)begin
+		      // token_pkt_pid = { data_out_unstuffing,token_pkt_pid[7:1]};  
+		      // `uvm_info("RX_STATE_MACHINE", $sformatf("PID_OUT= %0p",token_pkt_pid), UVM_LOW)
+		     //end
 		     if(pid_count==8) begin
 		        rx_data_queue.push_back(token_pkt_pid); 
 		        `uvm_info("RX_STATE_MACHINE", $sformatf("DATA_QUEUE_PID_VALUE=%0p",rx_data_queue), UVM_LOW)
@@ -1211,7 +1254,7 @@ task rx_state_machine(bit data_out_unstuffing);
                         bit [7:0] first_rx_byte;
                         first_rx_byte = rx_data_queue[0];
 
-                        if(pid_temp_low_setup == 8'd45 || pid_temp_low_setup == 8'hb4 )begin
+                      if(pid_temp_low_setup == 8'd45 || pid_temp_low_setup == 8'hb4 || pid_temp_low_setup == 8'he1 || pid_temp_high_setup[7:0] == 8'd45 || pid_temp_high_setup[7:0] ==8'hb4 || pid_temp_high_setup[7:0] == 8'he1)begin
                           `uvm_info("PHY_DRIVER",$sformatf("pid_temp_low_setup=%h",pid_temp_low_setup),UVM_LOW)
                           // repeat(1)begin
                               `uvm_info("PHY_DRIVER","BEFORE_ENTERING_INTO_COLLECTING_TASK",UVM_LOW)
@@ -1307,19 +1350,22 @@ task send_utmi_rx_data_to_device(virtual USB2p0_device_utmi_interface   device_u
           `uvm_info("UTMI_RX_QUEUE_SIZE",$sformatf("UTMI_RX_QUEUE_SIZE=%d",utmi_data_queue.size()),UVM_LOW)
 
           if(word_if) begin
-              for (int i = 0; i < DATA_WIDTH/8; i++) begin
-                  if (utmi_data_queue.size() > 0)
-                      rx_data_drive[i*8 +: 8] = utmi_data_queue.pop_front();
-                  else
-                      rx_data_drive[i*8 +: 8] = 8'h00;
-              end
+         //     for (int i = 0; i < DATA_WIDTH/8; i++) begin
+           //       if (utmi_data_queue.size() > 0)
+             //         rx_data_drive[i*8 +: 8] = utmi_data_queue.pop_front();
+              //    else
+                //      rx_data_drive[i*8 +: 8] = 8'h00;
+              //end
 
              // @(negedge utmi_interface_rx.utmi_clk);
-              for (int i = 0; i < DATA_WIDTH/8; i++) begin
-                  device_utmi_interface_rx.utmi_rxdata[i*8 +: 8] = rx_data_drive[i*8 +: 8];
-              end
-              device_utmi_interface_rx.utmi_rxvalid  = 1;
-              device_utmi_interface_rx.utmi_rxvalidh = 1;
+              //for (int i = 0; i < DATA_WIDTH/8; i++) begin
+                //  device_utmi_interface_rx.utmi_rxdata[i*8 +: 8] = rx_data_drive[i*8 +: 8];
+              //end
+               rx_data_drive  = utmi_data_queue.pop_front();
+               device_utmi_interface_rx.utmi_rxdata = rx_data_drive;
+               device_utmi_interface_rx.utmi_rxvalid  = 1;
+               device_utmi_interface_rx.utmi_rxvalidh = 1;
+               #1;
               `uvm_info("UTMI_RX_VALID",$sformatf("UTMI_RX_VALID=%b,UTMI_RX_VALIDH=%b",device_utmi_interface_rx.utmi_rxvalid,device_utmi_interface_rx.utmi_rxvalidh),UVM_LOW)
               `uvm_info("UTMI_RX_DATA",$sformatf("16BIT_DATA = %h",rx_data_drive),UVM_LOW)
           end
@@ -1367,19 +1413,22 @@ task send_utmi_rx_data_to_host(virtual USB2p0_host_utmi_interface   host_utmi_in
           `uvm_info("UTMI_RX_QUEUE_SIZE",$sformatf("UTMI_RX_QUEUE_SIZE=%d",utmi_data_queue.size()),UVM_LOW)
 
           if(word_if) begin
-              for (int i = 0; i < DATA_WIDTH/8; i++) begin
-                  if (utmi_data_queue.size() > 0)
-                      rx_data_drive[i*8 +: 8] = utmi_data_queue.pop_front();
-                  else
-                      rx_data_drive[i*8 +: 8] = 8'h00;
-              end
+             // for (int i = 0; i < DATA_WIDTH/8; i++) begin
+               //   if (utmi_data_queue.size() > 0)
+                 //     rx_data_drive[i*8 +: 8] = utmi_data_queue.pop_front();
+                 // else
+                   //   rx_data_drive[i*8 +: 8] = 8'h00;
+              //end
 
              // @(negedge utmi_interface_rx.utmi_clk);
-              for (int i = 0; i < DATA_WIDTH/8; i++) begin
-                  host_utmi_interface_rx.utmi_rxdata[i*8 +: 8] = rx_data_drive[i*8 +: 8];
-              end
+              //for (int i = 0; i < DATA_WIDTH/8; i++) begin
+                //  host_utmi_interface_rx.utmi_rxdata[i*8 +: 8] = rx_data_drive[i*8 +: 8];
+              //end
+              rx_data_drive = utmi_data_queue.pop_front();
+              host_utmi_interface_rx.utmi_rxdata = rx_data_drive;
               host_utmi_interface_rx.utmi_rxvalid  = 1;
               host_utmi_interface_rx.utmi_rxvalidh = 1;
+               #1;
               `uvm_info("UTMI_RX_VALID",$sformatf("UTMI_RX_VALID=%b,UTMI_RX_VALIDH=%b",host_utmi_interface_rx.utmi_rxvalid,host_utmi_interface_rx.utmi_rxvalidh),UVM_LOW)
               `uvm_info("UTMI_RX_DATA",$sformatf("16BIT_DATA = %h",rx_data_drive),UVM_LOW)
           end
@@ -1478,5 +1527,206 @@ endclass
             // Keep the PHY-side RX/TX infrastructure alive for the entire simulation.
             // The original fork...join blocked run_phase after the first packet, so the
             // host status-stage token was never re-captured by the PHY driver.
+endtask*/
+
+  /*task run_phase(uvm_phase phase);
+  bit rx_tx_threads_started;
+
+  `uvm_info("PHY_DRIVER",
+            $sformatf("ENTERED_INTO_PHY_DRIVER_RUN_PHASE "),
+            UVM_LOW)
+
+  @(host_utmi_interface_tx.cb_utmi_host_controller_driver);
+
+  if (!rx_tx_threads_started) begin
+    rx_tx_threads_started = 1;
+
+    fork
+      begin : host_tx_listener
+        forever begin
+          `uvm_info("PHY_DRIVER", $sformatf("COLLECTING_HOST_TX_DATA"), UVM_LOW)
+          fork
+            receiving_hc_tx_data(host_utmi_interface_tx);
+            receiving_dc_tx_data(device_utmi_interface_tx);
+          join_any
+          disable fork;
+        end
+      end
+
+      begin : host_rx_decoder
+        sending_hc_rx_data();
+      end
+
+     // begin : device_tx_listener
+     //   sending_dc_rx_data();
+     // end
+
+      //begin : device_rx_decoder
+      //  sending_dc_rx_data();
+      //end
+    join_none
+  end
+
+  forever begin
+    seq_item_port.get_next_item(req);
+
+    `uvm_info("PHY_DRIVER",
+              $sformatf("GET_NEXT_ITEM "),
+              UVM_LOW)
+
+    repeat (8)
+      @(posedge usb_phy_interface.cb_phy_driver);
+
+    usb_phy_interface.Vbus <= host_utmi_interface_tx.utmiotg_vbusvalid;
+
+    if (host_utmi_interface_tx.utmiotg_vbusvalid == 1) begin
+      `uvm_info("PHY_DRIVER",
+                $sformatf("PHY_DRIVER: PHY_Vbus=%b", usb_phy_interface.Vbus),
+                UVM_LOW)
+
+      @(posedge usb_phy_interface.cb_phy_driver);
+      detect_device_pullup_from_device();
+      detect_line_state();
+    end
+
+    seq_item_port.item_done();
+  end
+endtask*/
+
+/* task tx_bit_stuffing(input bit data_in);
+  bit data_out;
+  static int one_count = 0;
+  // If 6 ones already seen → insert stuffed 0 FIRST
+  if (one_count == 6) begin
+    data_out  = 0;   // stuffed bit
+    one_count = 0;
+    `uvm_info("STUFF","Inserted stuffed 0",UVM_LOW);
+    return;  // ❗ IMPORTANT: do not consume current input yet
+  end
+
+  // Normal data flow
+  data_out = data_in;
+
+  if (data_in == 1)
+    one_count++;
+  else
+    one_count = 0;
+
+  `uvm_info("STUFF",$sformatf("data_in=%0b data_out=%0b count=%0d",
+                             data_in, data_out, one_count),UVM_LOW);
+
+   tx_nrzi_encoder(data_out);
+endtask*/
+
+
+
+/* task bit_unstuffing(input bit data_in_unstuffing);
+      bit             data_out_unstuffing;
+      static bit[2:0] un_count = 0;
+     // static bit[2:0] un_count;
+    
+    `uvm_info("NRZI_DECODER",$sformatf("ENTERED_INTO_BIT_UNSTUFFING_TASK "),UVM_LOW); 
+      if(un_count==6 || data_in_unstuffing == 1)
+        un_count = un_count+1;
+      else
+        un_count = 0;
+ 
+       `uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_BEFORE_ASSIGNED_TO_UNSTUFFING_INPUT: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)                        
+      if(un_count == 7) begin   
+      //if(un_count == 6) begin   
+       `uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_INSIDE_COUNT_CONDTION_VALUE: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)                        
+           data_out_unstuffing = 1;
+           un_count =0;
+      end
+      else begin
+        //else if(data_in_unstuffing == 0 || data_in_unstuffing == 1)begin
+       `uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_BEFORE_ASSIGNED_TO_UNSTUFFING_OUTPUT_ELSE_PART_FOR_ZERO_VALUE: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)                        
+        data_out_unstuffing = data_in_unstuffing;
+        `uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING: data_out_unstuffing=%b",data_out_unstuffing),UVM_LOW)                        
+         rx_state_machine(data_out_unstuffing);
+      end
+       //`uvm_info(get_full_name(),$sformatf("BIT_UNSTUFFING_BEFORE_ASSIGNED_TO_UNSTUFFING_OUTPUT_ELSE_PART_FOR_ZERO_VALUE: data_in_unstuffing=%b",data_in_unstuffing),UVM_LOW)                        
+endtask*/
+
+
+/*task tx_bit_stuffing(input data_in_stuffing);
+    
+    static bit [2:0] count; //using static keyword it will increment the count. without static inside task by default it will be automatic it will create diff memory each time so count will be re-initialize.
+    bit data_out_stuffing;
+      
+    `uvm_info(get_full_name(), $sformatf("ENTERED_INTO_TX_BIT_STUFFING_TASK data_in_stuffing=%0d",data_in_stuffing),UVM_LOW)        
+
+    if(data_in_stuffing == 1)
+       count=count+1;
+    else
+       count=0;
+     
+    //if(count == 7)begin
+    if(count == 6)begin
+       	data_out_stuffing = 0;
+       	count =0;
+       // return;
+    end
+    else
+      data_out_stuffing = data_in_stuffing;
+
+      `uvm_info(get_full_name(),$sformatf("BIT_STUFFING:data_in_stuffing = %0b, data_out_stuffing = %0b,count=%0d", data_in_stuffing,data_out_stuffing,count),UVM_LOW)
+       tx_nrzi_encoder(data_out_stuffing);
+endtask */
+
+ /* task rx_sipo(bit serial_bit);
+
+   width = word_if ? 16 : 8;
+   `uvm_info("SIPO",$sformatf("RX_WIDTH = %0d WORD_IF=%0d", width,word_if),UVM_LOW)
+   rx_shift_reg = {serial_bit, rx_shift_reg[15:1]};
+
+   `uvm_info("SIPO",$sformatf("RX_SHIFT_REG = %0b",rx_shift_reg),UVM_LOW)
+   `uvm_info("SIPO",$sformatf("RX_COUNT_SIPO = %0d", rx_bit_count),UVM_LOW)
+   if(rx_bit_count == width) begin
+      if(width == 8) begin
+         sipo_data = rx_shift_reg[15:8];
+         `uvm_info("SIPO",$sformatf("SIPO_DATA_8BIT = %0d", sipo_data),UVM_LOW)
+         if((sipo_data == 8'b00000100) && !word_if) begin
+            `uvm_info("SIPO","EOP DETECTED IN 8BIT MODE",UVM_LOW)
+            eop_detected = 1;
+            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_EOP = %p",rx_data_queue),UVM_LOW)
+           // rx_shift_reg = 0;
+           // rx_bit_count = 0;
+         end
+         else begin
+            rx_data_queue.push_back(sipo_data);
+            `uvm_info("SIPO",$sformatf("PARALLEL_DATA_QUEUE = %0p", rx_data_queue),UVM_LOW)
+         end
+      end
+      else begin
+         sipo_data_high = rx_shift_reg[15:8];
+         sipo_data_low  = rx_shift_reg[7:0];
+         `uvm_info("SIPO",$sformatf("SIPO_DATA_HIGH = %0d", sipo_data_high),UVM_LOW)
+         `uvm_info("SIPO",$sformatf("SIPO_DATA_LOW  = %0d", sipo_data_low),UVM_LOW)
+         //if(sipo_data_high == 8'h7F && word_if) begin
+          if(sipo_data_high == 16'b0000_0000_0111_1111 && word_if) begin
+            `uvm_info("SIPO","EOP_DETECTED_IN_HIGH_BYTE",UVM_LOW)
+             rx_data_queue.push_back(sipo_data_low);
+            eop_detected = 1;
+            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_EOP = %p",rx_data_queue),UVM_LOW)
+         end
+         //else if(sipo_data_low == 8'h7F && word_if) begin
+          else if(sipo_data_low == 16'b0000_0000_0111_1111 && word_if) begin
+          //else if(sipo_data_low == 16'h7F && word_if) begin
+            `uvm_info("SIPO","EOP_DETECTED_IN_LOW_BYTE",UVM_LOW)
+            rx_data_queue.push_back(sipo_data_high);
+            `uvm_info("SIPO",$sformatf("QUEUE_AFTER_HIGH_PUSH = %p",rx_data_queue),UVM_LOW)
+            eop_detected = 1;
+         end
+         else begin
+            rx_data_queue.push_back(sipo_data_low);
+            rx_data_queue.push_back(sipo_data_high);
+            `uvm_info("SIPO",$sformatf("RX_PARALLEL_DATA = %0p", rx_data_queue),UVM_LOW)
+         end
+      end
+      rx_bit_count = 0;
+   end
+   rx_bit_count++;
+
 endtask*/
 

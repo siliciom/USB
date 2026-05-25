@@ -78,10 +78,12 @@ class USB2p0_environment extends uvm_env;
  
 		if(usb_ecfg.has_sb)begin
  			`uvm_info(" USB2p0_ENV ","ENTERED CONNECT PHASE - SCOREBOARD ",UVM_LOW)
- 			//host_controller_agent.usb_host_monitor.awaddr_port.connect(ace_sb.master_0_awaddr_imp);
+ 			  host_agent.host_controller_monitor.host_tx_mon_ap.connect(usb_scoreboard.host_tx_imp);
+ 			  host_agent.host_controller_monitor.host_rx_mon_ap.connect(usb_scoreboard.host_rx_imp);
  		end
  		if(usb_ecfg.has_sb)begin
- 		//	device_agent.usb_device_monitor.awaddr_port.connect(ace_sb.slave_awaddr_imp);
+                          device_agent.device_controller_monitor.device_tx_mon_ap.connect(usb_scoreboard.device_tx_imp);
+                          device_agent.device_controller_monitor.device_rx_mon_ap.connect(usb_scoreboard.device_rx_imp);
  		end
  
 		if(usb_ecfg.has_subscriber)begin
@@ -91,7 +93,6 @@ class USB2p0_environment extends uvm_env;
  		if(usb_ecfg.has_subscriber)begin
  		//ace_s_agent_top.ace_sagent.ace_smonitor.awaddr_port.connect(ace_ssr.slave_awaddr_imp);
  		end
- 
 		`uvm_info(" USB2p0_ENV ","COMPLETED CONNECT PHASE",UVM_LOW)
   	endfunction
 

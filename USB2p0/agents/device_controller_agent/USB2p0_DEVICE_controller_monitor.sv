@@ -2,30 +2,30 @@ class USB2p0_DEVICE_controller_monitor extends uvm_monitor;
   
   `uvm_component_utils(USB2p0_DEVICE_controller_monitor)
 
-   virtual USB2p0_device_utmi_interface     utmi_interface_tx;
-   virtual USB2p0_device_utmi_interface     utmi_interface_rx;
+    virtual USB2p0_device_utmi_interface     utmi_interface_tx;
+    virtual USB2p0_device_utmi_interface     utmi_interface_rx;
   
-    USB2p0_sequence_item             usb_device_rx_seq_item;
-    USB2p0_sequence_item             usb_device_tx_seq_item;
+    USB2p0_sequence_item                    usb_device_rx_seq_item;
+    USB2p0_sequence_item                    usb_device_tx_seq_item;
 
-    //uvm_analysis_port #(USB2p0_sequence_item) device_tx_mon_ap;
-    //uvm_analysis_port #(USB2p0_sequence_item) device_rx_mon_ap;
+    uvm_analysis_port #(USB2p0_sequence_item) device_tx_mon_ap;
+    uvm_analysis_port #(USB2p0_sequence_item) device_rx_mon_ap;
 
-   
       bit [15:0] data16;
       bit [7:0]  data8;
       bit [DATA_WIDTH-1:0] tx_queue[$];
       uvm_event data_stage_done_ev;
       uvm_event ack_done_ev;
       uvm_event ack_done_driv;
+
      function new(string name="USB2p0_DEVICE_controller_monitor", uvm_component parent);
           super.new(name,parent);
      endfunction
   
      function void build_phase(uvm_phase phase);
        super.build_phase(phase);
-       //device_tx_mon_ap = new("device_tx_mon_ap", this);
-       //device_rx_mon_ap = new("device_rx_mon_ap", this);
+         device_tx_mon_ap = new("device_tx_mon_ap", this);
+         device_rx_mon_ap = new("device_rx_mon_ap", this);
         data_stage_done_ev = uvm_event_pool::get_global_pool().get("DATA_STAGE_DONE_EVENT");
         ack_done_ev = uvm_event_pool::get_global_pool().get("ACK_DONE_EVENT");
         ack_done_driv = uvm_event_pool::get_global_pool().get("ACK_DONE_DRIVER_EVENT");
@@ -74,8 +74,9 @@ task collect_from_utmi_tx();
          //usb_device_tx_seq_item.utmi_txdata.delete();
          `uvm_info("DEVICE_MONITOR","COLLECT_VALID_VALIDH",UVM_LOW)
          if (usb_device_tx_seq_item.word_if && usb_device_tx_seq_item.tx_validh) begin
-            tx_queue.push_back(utmi_interface_tx.utmi_txdata[7:0]);
-            tx_queue.push_back(utmi_interface_tx.utmi_txdata[15:8]);
+            tx_queue.push_back(utmi_interface_tx.utmi_txdata);
+            //tx_queue.push_back(utmi_interface_tx.utmi_txdata[7:0]);
+            //tx_queue.push_back(utmi_interface_tx.utmi_txdata[15:8]);
             `uvm_info("DEVICE_MONITOR",$sformatf("16BIT_CAPTURED_TX_DATA = %p",tx_queue),UVM_LOW)
          end
          else begin
@@ -88,7 +89,7 @@ task collect_from_utmi_tx();
       end //while begin end
         `uvm_info("DEVICE_MONITOR","COLLECTED_UTMI_TX_SIGNALS",UVM_LOW)
          usb_device_tx_seq_item.print();
-         
+         device_tx_mon_ap.write(usb_device_tx_seq_item);
     end
 endtask
 
@@ -100,6 +101,7 @@ task collect_from_utmi_rx();
   
   forever begin
    usb_device_rx_seq_item = USB2p0_sequence_item::type_id::create("usb_device_rx_seq_item");
+   tx_queue.delete();
    wait (utmi_interface_rx.utmi_rxvalid || utmi_interface_rx.utmi_rxvalidh);
      @(negedge utmi_interface_rx.cb_utmi_device_controller_monitor);
      usb_device_rx_seq_item.rx_valid       = utmi_interface_rx.utmi_rxvalid;
@@ -113,7 +115,7 @@ task collect_from_utmi_rx();
        @(negedge utmi_interface_rx.cb_utmi_device_controller_monitor);
         if (usb_device_rx_seq_item.rx_valid && usb_device_rx_seq_item.rx_validh) begin 
             collect_data16 = utmi_interface_rx.utmi_rxdata;
-            `uvm_info("DEVICE_MONITOR",$sformatf("16BIT_DATA_ON_RX = %h validh=%0d", collect_data16,usb_device_rx_seq_item.rx_validh),UVM_LOW)
+            `uvm_info("DEVICE_MONITOR",$sformatf("16BIT_DATA_ON_RX = %b validh=%0d", collect_data16,usb_device_rx_seq_item.rx_validh),UVM_LOW)
              usb_device_rx_seq_item.rx_data.push_back(collect_data16);
            `uvm_info("DEVICE_MONITOR",$sformatf("16BIT_DATA_ON_RX = %p", usb_device_rx_seq_item.rx_data),UVM_LOW)
          end
@@ -126,6 +128,14 @@ task collect_from_utmi_rx();
         end
          `uvm_info("DEVICE_MONITOR","DEVICE_RX_PACKET_COMPLETE",UVM_LOW)
           usb_device_rx_seq_item.print();
+	  if(usb_device_rx_seq_item.rx_data.size() > 0)
+            usb_device_rx_seq_item.rx_valid = 1'b1;
+          if(usb_device_rx_seq_item.word_if &&
+            usb_device_rx_seq_item.rx_data.size() > 0) begin
+            usb_device_rx_seq_item.rx_valid  = 1'b1;
+            usb_device_rx_seq_item.rx_validh = 1'b1;
+          end
+          device_rx_mon_ap.write(usb_device_rx_seq_item);
            //if (usb_device_rx_seq_item.rx_data.size() > 0) begin
            if (usb_device_rx_seq_item.rx_data.size() == 1 &&  usb_device_rx_seq_item.rx_data[0] == 8'h2D) begin
              // if (usb_device_rx_seq_item.rx_data[0] == 8'h2D) begin // ACK PID
