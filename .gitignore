@@ -1,0 +1,13 @@
+# Simulation logs
+*.log
+*.wlf
+*.vcd
+*.swp
+transcript
+work/
+modelsim.ini
+*.jou
+*.pb
+
+# Simulation/generated folders
+sim/*.log
