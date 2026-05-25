@@ -111,10 +111,10 @@ class usb2p0_scoreboard extends uvm_scoreboard;
       act_data = host_tx_q.pop_front();
       exp_data = device_rx_q.pop_front();
       if(exp_data == act_data) begin
-        `uvm_info("HOST_DEVICE_COMPARE",$sformatf("MATCHED EXP=%p ACT=%p",exp_data,act_data),UVM_LOW)
+        `uvm_info("HOST_DEVICE_COMPARE",$sformatf("SB_DATA_MATCHED EXP=%p ACT=%p",exp_data,act_data),UVM_LOW)
       end
       else begin
-        `uvm_error("HOST_DEVICE_COMPARE",$sformatf("MISMATCH EXP=%p ACT=%p",exp_data,act_data))
+        `uvm_error("HOST_DEVICE_COMPARE",$sformatf("SB_DATA_MISMATCH EXP=%p ACT=%p",exp_data,act_data))
       end
     end
   endfunction
@@ -132,10 +132,10 @@ class usb2p0_scoreboard extends uvm_scoreboard;
       exp_data = host_rx_q.pop_front();
       //`uvm_info("DEVICE_HOST_COMPARE",$sformatf("DEVICE_HOST_EXP=%p",exp_data),UVM_LOW)
       if(exp_data == act_data) begin
-      `uvm_info("DEVICE_HOST_COMPARE",$sformatf("MATCHED EXP=%p ACT=%p",exp_data,act_data),UVM_LOW)
+      `uvm_info("DEVICE_HOST_COMPARE",$sformatf("SB_DATA_MATCHED EXP=%p ACT=%p",exp_data,act_data),UVM_LOW)
       end
       else begin
-      `uvm_error("DEVICE_HOST_COMPARE",$sformatf("MISMATCH EXP=%p ACT=%p",exp_data,act_data))
+      `uvm_error("DEVICE_HOST_COMPARE",$sformatf("SB_DATA_MISMATCH EXP=%p ACT=%p",exp_data,act_data))
       end
     end
   endfunction
