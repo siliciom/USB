@@ -33,7 +33,7 @@ class usb2p0_host_fs_ct_get_descriptor_error_sequence extends USB2p0_HOST_sequen
                                       wValue           ==  16'h0001; 
    	                              wIndex 	       ==  16'd0;  
                                       wLength          ==  16'd18;     
-                                      status_stage_pid_in ==  4'b1001;
+                                      status_stage_pid_in ==   USB2p0_sequence_item::PID_IN;
                                       rx_valid         ==  'd0;
 			              rx_validh        == 'd0; }) begin
 		`uvm_fatal("RAND_FAIL", "HOST_FS_data_stage_seq_Randomization failed")

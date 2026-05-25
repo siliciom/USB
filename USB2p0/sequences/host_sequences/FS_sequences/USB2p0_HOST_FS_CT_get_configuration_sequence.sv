@@ -23,8 +23,8 @@ class usb2p0_host_fs_ct_get_configuration_sequence extends USB2p0_HOST_sequence;
 	                             // otg_dppulldown   ==  0;
 	                             // otg_dmpulldown   ==  1;
 	                              otg_vbusvalid    ==  1'b1;
-                                      setup_token_pid  ==  4'b1101;
-                                      setup_data_pid   ==  4'b0011;
+                                      setup_token_pid  ==  USB2p0_sequence_item::PID_SETUP;
+                                      setup_data_pid   ==  USB2p0_sequence_item::PID_DATA0;
                                       addr             ==  7'd0;
                                       endp             ==  4'd0;
                                       bmRequestType    ==  8'd128;
@@ -33,7 +33,7 @@ class usb2p0_host_fs_ct_get_configuration_sequence extends USB2p0_HOST_sequence;
    	                              wIndex 	       ==  16'd0;  
                                       wLength          ==  16'd1;     
                                       data_stage_pid_in ==  4'b1001;
-                                      status_stage_pid_out ==  4'b0001;
+                                      status_stage_pid_out ==   USB2p0_sequence_item::PID_OUT;
                                       rx_valid          ==  'd1;
 			              rx_validh         == 'd0; }) begin
 		`uvm_fatal("RAND_FAIL", "HOST_LS_data_stage_seq_Randomization failed")

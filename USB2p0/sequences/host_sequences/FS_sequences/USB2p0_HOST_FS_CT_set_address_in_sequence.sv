@@ -24,19 +24,19 @@ class usb2p0_host_fs_ct_set_address_in_sequence extends USB2p0_HOST_sequence;
 	                              otg_dppulldown   ==  0;
 	                              otg_dmpulldown   ==  0;
 	                              otg_vbusvalid    ==  1'b1;
-                                      setup_token_pid ==  4'b1101;
-                                      setup_data_pid   ==  4'b0011;
+                                      setup_token_pid ==   USB2p0_sequence_item::PID_SETUP;
+                                      setup_data_pid   ==  USB2p0_sequence_item::PID_DATA0;
                                       addr             ==  7'd0;
                                       endp             ==  4'd0;
                                       bmRequestType    ==  8'd0;
                                       bRequest         ==  8'd5; 
                                       wValue           ==  16'd5; 
-   	                                  wIndex 	       ==  16'd0;  
+   	                              wIndex 	       ==  16'd0;  
                                       wLength          ==  16'd0;     
                                      // data_stage_pid_in   ==  4'b1001;
-                                      status_stage_pid_in ==  4'b1001;
-                                      rx_valid         ==  'd0;
-			                          rx_validh        == 'd0; }) begin
+                                      status_stage_pid_in ==  USB2p0_sequence_item::PID_IN;
+                                      rx_valid            ==  'd0;
+			              rx_validh           == 'd0; }) begin
 		`uvm_fatal("RAND_FAIL", "HOST_FS_data_stage_seq_Randomization failed")
 	    end 
           start_item(req);
