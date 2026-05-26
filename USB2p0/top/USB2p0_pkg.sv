@@ -36,7 +36,7 @@ package USB2p0_pkg;
 	`include "../agents/phy_agent/USB2p0_PHY_agent.sv"
 	`include "../agents/device_controller_agent/USB2p0_DEVICE_controller_agent.sv"
 
-	//------------------ adding host sequences ------------------------//
+	//------------------ adding host ls sequences ------------------------//
 	`include "../sequences/host_sequences/USB2p0_HOST_sequence.sv"
 	`include "../sequences/host_sequences/USB2p0_HOST_vbus_connect_sequence.sv"
 	`include "../sequences/host_sequences/USB2p0_HOST_vbus_disconnect_sequence.sv"
@@ -54,10 +54,25 @@ package USB2p0_pkg;
 	`include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_interrupt_in_sequence.sv"
 	`include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_interrupt_out_sequence.sv"
 
+	///////////////////////////////random sequeneces////////////////////////////////////////////////
+	`include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_interrupt_random_in_sequence.sv"
+	`include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_interrupt_random_out_sequence.sv"
+	`include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_random_sequence.sv"
+
   	 /////////////////////////////// error sequences ////////////////////////////////////////////////
         `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_CT_set_address_in_error_sequence.sv"
         `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_CT_clear_feature_in_error_sequence.sv"
+        `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_CT_set_configuration_in_error_sequence.sv"
+        `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_CT_set_feature_in_error_sequence.sv"
+        `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_CT_set_interface_in_error_sequence.sv"
+        `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_CT_get_status_error_sequence.sv"
+        `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_CT_get_descriptor_error_sequence.sv"
+        `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_CT_get_interface_error_sequence.sv"
+        `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_CT_get_configuration_error_sequence.sv"
+        `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_interrupt_in_error_sequence.sv"
+        `include "../sequences/host_sequences/LS_sequences/USB2p0_HOST_LS_interrupt_out_error_sequence.sv"
 
+	//------------------ adding host fs sequences ------------------------//
 	`include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_detect_sequence.sv"
 	`include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_set_configuration_in_sequence.sv"
 	`include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_set_interface_in_sequence.sv"
@@ -75,7 +90,35 @@ package USB2p0_pkg;
 	`include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_bulk_in_sequence.sv"
 	`include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_bulk_out_sequence.sv"
 
-	`include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_detect_sequence.sv"
+  	 /////////////////////////////// error sequences ////////////////////////////////////////////////
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_set_configuration_in_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_set_address_in_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_set_interface_in_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_set_feature_in_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_clear_feature_in_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_get_configuration_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_get_status_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_get_descriptor_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_CT_get_interface_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_interrupt_in_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_interrupt_out_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_bulk_in_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_bulk_out_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_isochronous_in_error_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_isochronous_out_error_sequence.sv"
+
+	///////////////////////////////random sequeneces////////////////////////////////////////////////
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_interrupt_random_in_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_interrupt_random_out_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_bulk_random_in_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_bulk_random_out_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_isochronous_random_in_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_isochronous_random_out_sequence.sv"
+        `include "../sequences/host_sequences/FS_sequences/USB2p0_HOST_FS_random_sequence.sv"
+
+
+	    //------------------ adding host hs sequences ------------------------//
+    	`include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_detect_sequence.sv"
         `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_set_configuration_in_sequence.sv"
         `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_set_address_in_sequence.sv"
         `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_set_interface_in_sequence.sv"
@@ -91,7 +134,32 @@ package USB2p0_pkg;
         `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_isochronous_out_sequence.sv"
         `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_bulk_in_sequence.sv"
         `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_bulk_out_sequence.sv"
+  	 
+         /////////////////////////////// error sequences ////////////////////////////////////////////////
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_set_configuration_in_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_set_address_in_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_set_interface_in_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_set_feature_in_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_clear_feature_in_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_get_configuration_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_get_status_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_get_descriptor_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_CT_get_interface_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_interrupt_in_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_interrupt_out_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_bulk_in_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_bulk_out_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_isochronous_in_error_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_isochronous_out_error_sequence.sv"
 
+	///////////////////////////////random sequeneces////////////////////////////////////////////////
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_interrupt_random_in_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_interrupt_random_out_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_bulk_random_in_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_bulk_random_out_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_isochronous_random_in_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_isochronous_random_out_sequence.sv"
+        `include "../sequences/host_sequences/HS_sequences/USB2p0_HOST_HS_random_sequence.sv"
 	//------------------ adding phy sequences ------------------------//
 	`include "../sequences/phy_sequences/USB2p0_PHY_sequence.sv"
 	`include "../sequences/phy_sequences/USB2p0_PHY_vbus_sequence.sv"
@@ -106,16 +174,23 @@ package USB2p0_pkg;
 	`include "../sequences/device_sequences/LS_sequences/USB2p0_DEVICE_LS_detect_sequence.sv"
 	`include "../sequences/device_sequences/LS_sequences/USB2p0_DEVICE_LS_setup_hs_sequence.sv"
 	`include "../sequences/device_sequences/LS_sequences/USB2p0_DEVICE_LS_send_hs_sequence.sv"
+	`include "../sequences/device_sequences/LS_sequences/USB2p0_DEVICE_LS_interrupt_in_error_sequence.sv"
 
         `include "../sequences/device_sequences/FS_sequences/USB2p0_DEVICE_FS_detect_sequence.sv"
         `include "../sequences/device_sequences/FS_sequences/USB2p0_DEVICE_FS_send_hs_sequence.sv"
         `include "../sequences/device_sequences/FS_sequences/USB2p0_DEVICE_FS_setup_sequence.sv"
+	`include "../sequences/device_sequences/FS_sequences/USB2p0_DEVICE_FS_interrupt_in_error_sequence.sv"
+	`include "../sequences/device_sequences/FS_sequences/USB2p0_DEVICE_FS_bulk_in_error_sequence.sv"
+	`include "../sequences/device_sequences/FS_sequences/USB2p0_DEVICE_FS_isochronous_in_error_sequence.sv"
           
         `include "../sequences/device_sequences/HS_sequences/USB2p0_DEVICE_HS_detect_sequence.sv"
         `include "../sequences/device_sequences/HS_sequences/USB2p0_DEVICE_HS_send_hs_sequence.sv"
         `include "../sequences/device_sequences/HS_sequences/USB2p0_DEVICE_HS_setup_sequence.sv"
+    	`include "../sequences/device_sequences/HS_sequences/USB2p0_DEVICE_HS_interrupt_in_error_sequence.sv"
+    	`include "../sequences/device_sequences/HS_sequences/USB2p0_DEVICE_HS_bulk_in_error_sequence.sv"
+    	`include "../sequences/device_sequences/HS_sequences/USB2p0_DEVICE_HS_isochronous_in_error_sequence.sv"
 
-          //------------------ adding vsequences ------------------------//
+          //------------------ adding ls vsequences ------------------------//
         `include "../sequences/virtual_sequence/USB2p0_vbus_connect_vsequence.sv"
         `include "../sequences/virtual_sequence/USB2p0_vbus_disconnect_vsequence.sv"
 
@@ -135,7 +210,23 @@ package USB2p0_pkg;
         ///////////////////////////////////error vsequences////////////////////////////////////////
         `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_CT_set_address_error_vsequence.sv"
         `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_CT_clear_feature_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_CT_set_configuration_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_CT_set_feature_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_CT_set_interface_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_CT_get_status_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_CT_get_descriptor_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_CT_get_interface_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_CT_get_configuration_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_interrupt_in_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_interrupt_out_error_vsequence.sv"
 
+
+	///////////////////////////////random vsequeneces////////////////////////////////////////////////
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_random_interrupt_in_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_random_interrupt_out_vsequence.sv"
+        `include "../sequences/virtual_sequence/LS_vsequences/USB2p0_LS_random_vsequence.sv"
+
+          //------------------ adding fs vsequences ------------------------//
         `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_detect_vsequence.sv"
         `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_set_configuration_vsequence.sv"
         `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_set_interface_vsequence.sv"
@@ -152,7 +243,35 @@ package USB2p0_pkg;
         `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_interrupt_out_vsequence.sv"
         `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_bulk_in_vsequence.sv"
         `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_bulk_out_vsequence.sv"
-       
+        
+         ///////////////////////////////////error vsequences////////////////////////////////////////
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_set_configuration_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_set_address_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_set_interface_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_set_feature_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_clear_feature_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_get_configuration_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_get_status_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_get_descriptor_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_CT_get_interface_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_interrupt_in_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_interrupt_out_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_bulk_in_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_bulk_out_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_isochronous_in_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_isochronous_out_error_vsequence.sv"
+
+
+   	///////////////////////////////random vsequeneces////////////////////////////////////////////////
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_random_interrupt_in_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_random_interrupt_out_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_random_bulk_out_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_random_bulk_in_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_random_isochronous_in_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_random_isochronous_out_vsequence.sv"
+        `include "../sequences/virtual_sequence/FS_vsequences/USB2p0_FS_random_vsequence.sv"
+    
+          //------------------ adding hs vsequences ------------------------//
         `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_detect_vsequence.sv"
         `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_set_configuration_vsequence.sv"
         `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_set_address_vsequence.sv"
@@ -170,6 +289,35 @@ package USB2p0_pkg;
         `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_bulk_in_vsequence.sv"
         `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_bulk_out_vsequence.sv"
  
+         ///////////////////////////////////error vsequences////////////////////////////////////////
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_set_configuration_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_set_address_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_set_interface_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_set_feature_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_clear_feature_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_get_configuration_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_get_status_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_get_descriptor_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_CT_get_interface_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_interrupt_in_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_interrupt_out_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_bulk_in_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_bulk_out_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_isochronous_in_error_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_isochronous_out_error_vsequence.sv"
+
+
+	///////////////////////////////random vsequeneces////////////////////////////////////////////////
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_random_interrupt_in_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_random_interrupt_out_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_random_bulk_out_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_random_bulk_in_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_random_isochronous_in_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_random_isochronous_out_vsequence.sv"
+        `include "../sequences/virtual_sequence/HS_vsequences/USB2p0_HS_random_vsequence.sv"
+    
+
+
 	//-------------------------------------------------------------//
         `include "../env/USB2p0_scoreboard.sv"
         `include "../env/usb2p0_subscriber.sv"
@@ -179,6 +327,7 @@ package USB2p0_pkg;
         `include "../tests/USB2p0_vbus_connect_test.sv"
         `include "../tests/USB2p0_vbus_disconnect_test.sv"
 
+        ///////////////////ls test///////////////////////////////////////
         `include "../tests/LS_Transfers/USB2p0_LS_detect_test.sv"
         `include "../tests/LS_Transfers/USB2p0_LS_CT_set_address_test.sv"
         `include "../tests/LS_Transfers/USB2p0_LS_CT_clear_feature_test.sv"
@@ -192,10 +341,25 @@ package USB2p0_pkg;
         `include "../tests/LS_Transfers/USB2p0_LS_interrupt_in_test.sv"
         `include "../tests/LS_Transfers/USB2p0_LS_interrupt_out_test.sv"
 
+        /////////////////////////random test///////////////////////////////
+        `include "../tests/LS_Transfers/USB2p0_LS_random_interrupt_in_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_random_interrupt_out_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_random_test.sv"
+
         ///////////////////error test///////////////////////////////////////
         `include "../tests/LS_Transfers/USB2p0_LS_CT_set_address_error_test.sv"
         `include "../tests/LS_Transfers/USB2p0_LS_CT_clear_feature_error_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_CT_set_configuration_error_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_CT_set_feature_error_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_CT_set_interface_error_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_CT_get_status_error_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_CT_get_descriptor_error_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_CT_get_interface_error_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_CT_get_configuration_error_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_interrupt_in_error_test.sv"
+        `include "../tests/LS_Transfers/USB2p0_LS_interrupt_out_error_test.sv"
 
+        ///////////////////fs test///////////////////////////////////////
         `include "../tests/FS_Transfers/USB2p0_FS_detect_test.sv"
         `include "../tests/FS_Transfers/USB2p0_FS_isochronous_in_test.sv"
         `include "../tests/FS_Transfers/USB2p0_FS_isochronous_out_test.sv"
@@ -212,7 +376,34 @@ package USB2p0_pkg;
         `include "../tests/FS_Transfers/USB2p0_FS_bulk_in_test.sv"
         `include "../tests/FS_Transfers/USB2p0_FS_bulk_out_test.sv"
         `include "../tests/FS_Transfers/USB2p0_FS_interrupt_out_test.sv"
+
+        ///////////////////////fs random test///////////////////////////////
+        `include "../tests/FS_Transfers/USB2p0_FS_random_interrupt_in_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_random_interrupt_out_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_random_bulk_in_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_random_bulk_out_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_random_isochronous_in_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_random_isochronous_out_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_random_test.sv"
+    
+        ///////////////////error test///////////////////////////////////////
+        `include "../tests/FS_Transfers/USB2p0_FS_CT_set_configuration_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_CT_set_address_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_CT_set_interface_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_CT_set_feature_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_CT_clear_feature_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_CT_get_configuration_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_CT_get_status_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_CT_get_descriptor_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_CT_get_interface_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_interrupt_in_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_interrupt_out_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_bulk_in_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_bulk_out_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_isochronous_in_error_test.sv"
+        `include "../tests/FS_Transfers/USB2p0_FS_isochronous_out_error_test.sv"
        
+        ///////////////////hs test///////////////////////////////////////
         `include "../tests/HS_Transfers/USB2p0_HS_detect_test.sv"
         `include "../tests/HS_Transfers/USB2p0_HS_CT_set_configuration_test.sv"
         `include "../tests/HS_Transfers/USB2p0_HS_CT_set_address_test.sv"
@@ -230,6 +421,32 @@ package USB2p0_pkg;
         `include "../tests/HS_Transfers/USB2p0_HS_bulk_in_test.sv"
         `include "../tests/HS_Transfers/USB2p0_HS_bulk_out_test.sv"
 
+        //////////////////////hs random test//////////////////////////////////
+        `include "../tests/HS_Transfers/USB2p0_HS_random_interrupt_in_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_random_interrupt_out_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_random_bulk_in_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_random_bulk_out_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_random_isochronous_in_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_random_isochronous_out_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_random_test.sv"
+
+
+        ///////////////////error test///////////////////////////////////////
+        `include "../tests/HS_Transfers/USB2p0_HS_CT_set_configuration_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_CT_set_address_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_CT_set_interface_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_CT_set_feature_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_CT_clear_feature_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_CT_get_configuration_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_CT_get_status_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_CT_get_descriptor_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_CT_get_interface_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_interrupt_in_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_interrupt_out_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_bulk_in_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_bulk_out_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_isochronous_in_error_test.sv"
+        `include "../tests/HS_Transfers/USB2p0_HS_isochronous_out_error_test.sv"
 
 endpackage
 

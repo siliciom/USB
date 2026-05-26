@@ -81,10 +81,11 @@ class USB2p0_sequence_item extends uvm_sequence_item;
       rand recipient_e    recipient;
       rand transfers      transfer_type;
       //rand bRequest_e     bRequest; 
-      rand pid_e          setup_token_pid, setup_data_pid, handshake_pid_ack,handshake_pid_nack,handshake_pid_stall,data1_pid,token_pid_in, token_pid_out;
-      //rand bit [3:0]  setup_data_pid, setup_handshake_pid, data_token_pid,data_data_pid, data_handshake_pid, status_token_pid, status_data_pid, status_handshake_pid, start_of_frame_pid,interrupt_in_pid,interrupt_out_pid;
-      //rand bit [3:0]  data_token_pid,data_data_pid,data_stage_pid_in,data_stage_pid_out,status_stage_pid_in,status_stage_pid_out,interrupt_in_pid,interrupt_out_pid;
+      rand bit [3:0]  setup_token_pid, setup_data_pid, handshake_pid_ack,handshake_pid_nack,handshake_pid_stall,data1_pid,token_pid_in, token_pid_out;
       rand bit [3:0]   data_data_pid,data_stage_pid_in,data_stage_pid_out,status_stage_pid_in,status_stage_pid_out,interrupt_in_pid,interrupt_out_pid,iso_in_pid,iso_out_pid,bulk_in_pid,bulk_out_pid;
+      rand bit interrupt_dir;
+      rand bit bulk_dir;
+      rand bit iso_dir;
       rand bit [7:0]   bRequest;
       rand bit [7:0]   bmRequestType;
       rand bit [15:0]  wValue;
@@ -147,162 +148,246 @@ class USB2p0_sequence_item extends uvm_sequence_item;
       rand bit [7:0] host_payload[];
       rand bit [7:0] device_payload[];
       rand bit [7:0] payload[];
-      rand bit [7:0] length;
-      speed_state usb_speed;
+      rand bit [19:0] length;
+      rand speed_state usb_speed;
 
       constraint op_mode_constraint{ op_mode inside {[0:1]};}
 
-      constraint payload_length_device { length inside {[1:64]};
+      constraint payload_length_device { length inside {[1:2060]};
                                         device_payload.size() == length;} 
       
-      constraint payload_length_host { length inside {[1:64]};
+      constraint payload_length_host { length inside {[1:2060]};
                                       host_payload.size() == length;} 
 
                                       
       ////////////////////////////////////////////////////////////////
-      constraint usb_control_pid {
-                                     setup_token_pid     == PID_SETUP;
-                                     setup_data_pid      == PID_DATA0;
-                                     handshake_pid_ack   == PID_ACK;
-                                     handshake_pid_nack  == PID_NAK;
-                                     handshake_pid_stall == PID_STALL;
-                                     token_pid_in        == PID_IN; 
-                                     token_pid_out       == PID_OUT;
-                                     data1_pid           == PID_DATA1;
-                                  }
  
-       /*constraint usb_standard_req_c {
-                                      bmRequestType inside {8'b00000000, 8'b00000001, 8'b00000010,8'b10000000, 8'b10000001,8'b10000010};
-                                     if(bmRequestType == 8'b00000000) {
-                                       bRequest inside {SET_ADDRESS,SET_CONFIGURATION,SET_DESCRIPTOR,CLEAR_FEATURE,SET_FEATURE};
-    // SET_ADDRESS
-                                     if (bRequest == SET_ADDRESS) {
-                                         wValue[6:0] inside {[1:127]};
-                                         wValue[15:7] == 0;
-                                         wIndex == 0;
-                                         wLength == 0;
-                                        }
+ constraint usb_bmrequesttype_c {
+   if(transfer_type == CONTROL_TRANSFER) {
+      bmRequestType inside {8'd0,8'd1,8'd128,8'd129};
+     }
+  }
+//==========================================================
+constraint usb_control_feature_pid_c {
+   if(transfer_type == CONTROL_TRANSFER) {
+      setup_token_pid == PID_SETUP;
+      setup_data_pid  == PID_DATA0;
+      //=============GET REQUESTS=============
+      if(bRequest inside {
+         GET_STATUS,
+         GET_DESCRIPTOR,
+         GET_CONFIGURATION,
+         GET_INTERFACE
+      }) {
+         token_pid_in        == PID_IN;
+         status_stage_pid_out == PID_OUT;
+      }
+      //===============SET REQUESTS=============
+      if(bRequest inside {
+         CLEAR_FEATURE,
+         SET_ADDRESS,
+         SET_CONFIGURATION,
+         SET_FEATURE,
+         SET_INTERFACE
 
-    // SET_CONFIGURATION
-                                     else if (bRequest == SET_CONFIGURATION) {
-                                              wValue inside {[1:5]};
-                                              wIndex == 0;
-                                              wLength == 0;
-                                              }
+      }) {
+         token_pid_in == PID_IN;
+      }
+   }
+}
 
-    // SET_DESCRIPTOR
-                                     else if (bRequest == SET_DESCRIPTOR) {
-                                     wValue[15:8] inside {8'h01,8'h02,8'h03};
-                                     wValue[7:0]  inside {[0:3]};
-                                     wIndex inside {16'h0000,16'h0409};
-                                     wLength > 0;
-                                     }
+//==========================================================
 
-    // CLEAR_FEATURE / SET_FEATURE
-                                    else if (bRequest inside {CLEAR_FEATURE, SET_FEATURE}) {
-                                    wValue inside {16'h0000,16'h0001};
-                                    wIndex == 0;
-                                    wLength == 0;
-                                    }
-                                   }
-                                   else if (bmRequestType == 8'b00000001) {
-                                   bRequest inside {SET_INTERFACE,CLEAR_FEATURE,SET_FEATURE};
-    // SET_INTERFACE
-                                  if (bRequest == SET_INTERFACE) {
-                                  wValue inside {[0:3]};
-                                  wIndex inside {[0:3]};
-                                  wLength == 0;
-                                  }
+/*constraint set_get_dependency_c {
+   if(transfer_type == CONTROL_TRANSFER) {
+      if(prev_set_request == SET_INTERFACE) {
+         bRequest == GET_INTERFACE;
+      }
+      if(prev_set_request == SET_CONFIGURATION) {
+         bRequest == GET_CONFIGURATION;
+      }
+   }
+}*/
 
-    // CLEAR_FEATURE / SET_FEATURE
-                                  else if (bRequest inside {CLEAR_FEATURE, SET_FEATURE}) {
-                                  wValue inside {16'h0000,16'h0001};
-                                  wIndex inside {[0:15]};
-                                  wLength == 0;
-                                  }
-                                 }
-                                 else if (bmRequestType == 8'b00000010) {
-                                 bRequest inside {CLEAR_FEATURE, SET_FEATURE};
-                                 wValue inside {16'h0000,16'h0001};
-                                 wIndex inside {[0:15]};
-                                 wLength == 0;
-                                 }
-                                else if (bmRequestType == 8'b10000000) {
-                                bRequest inside {
-                                GET_STATUS,
-                                GET_DESCRIPTOR,
-                                GET_CONFIGURATION
-                                };
-    // GET_STATUS
-                               if (bRequest == GET_STATUS) {
-                               wValue == 0;
-                               wIndex == 0;
-                               wLength == 2;
-                               }
-    // GET_DESCRIPTOR
-                               else if (bRequest == GET_DESCRIPTOR) {
-                               wValue[15:8] inside {8'h01,8'h02,8'h03};
-                               wValue[7:0]  inside {[0:3]};
-                               wIndex inside {16'h0000,16'h0409};
-                               wLength > 0;
-                               }
+//==========================================================
+constraint usb_standard_request_c {
+   if(transfer_type == CONTROL_TRANSFER) {
+      //=======GET_CONFIGURATION========
+      if(bRequest == GET_CONFIGURATION) {
+         bmRequestType == 8'd128;
+         bRequest      == 8'd8;
+         wValue        == 16'd0;
+         wIndex        == 16'd0;
+         wLength       == 16'd1;
+      }
+      //=======GET_DESCRIPTOR==========
+      if(bRequest == GET_DESCRIPTOR) {
+         bmRequestType == 8'd128;
+         bRequest      == 8'd6;
+         wValue        == 16'd1;
+         wIndex        == 16'd0;
+         wLength       == 16'd18;
+      }
+      //======GET_INTERFACE===========
+      if(bRequest == GET_INTERFACE) {
+         bmRequestType == 8'd129;
+         bRequest      == 8'd10;
+         wValue        == 16'd0;
+         wIndex        == 16'd1;
+         wLength       == 16'd1;
+      }
+      //========GET_STATUS===========
+      if(bRequest == GET_STATUS) {
+         bmRequestType == 8'd128;
+         bRequest      == 8'd0;
+         wValue        == 16'd0;
+         wIndex        == 16'd0;
+         wLength       == 16'd2;
+      }
+      //=======SET_CONFIGURATION=========
+      if(bRequest == SET_CONFIGURATION) {
+         bmRequestType == 8'd0;
+         bRequest      == 8'd9;
+         wValue        == 16'd1;
+         wIndex        == 16'd0;
+         wLength       == 16'd0;
+      }
+      //===========CLEAR_FEATURE============
+      if(bRequest == CLEAR_FEATURE) {
+         bmRequestType == 8'd0;
+         bRequest      == 8'd1;
+         wValue        == 16'd0;
+         wIndex        == 16'd0081;
+         wLength       == 16'd0;
+      }
+      //==========SET_FEATURE================
+      if(bRequest == SET_FEATURE) {
+         bmRequestType == 8'd0;
+         bRequest      == 8'd3;
+         wValue        == 16'd1;
+         wIndex        == 16'd0;
+         wLength       == 16'd0;
+      }
+      //==========SET_INTERFACE===============
+      if(bRequest == SET_INTERFACE) {
+         bmRequestType == 8'd1;
+         bRequest      == 8'd11;
+         wValue        == 16'd1;
+         wIndex        == 16'd1;
+         wLength       == 16'd0;
+      }
+      //===========SET_ADDRESS=================
+      if(bRequest == SET_ADDRESS) {
+         bmRequestType == 8'd0;
+         bRequest      == 8'd5;
+         wValue        == 16'd5;
+         wIndex        == 16'd0;
+         wLength       == 16'd0;
+      }
+   }
+} 
 
-    // GET_CONFIGURATION
-                               else if (bRequest == GET_CONFIGURATION) {
-                               wValue == 0;
-                               wIndex == 0;
-                               wLength == 1;
-                               }
-                              }
-                              else if (bmRequestType == 8'b10000001) {
-                              bRequest inside {GET_STATUS, GET_INTERFACE};
-    // GET_STATUS
-                             if (bRequest == GET_STATUS) {
-                             wValue == 0;
-                             wIndex inside {[0:15]};
-                             wLength == 2;
-                             }
+//==========================================================
+// INTERRUPT TRANSFER CONSTRAINTS
+//==========================================================
+/*constraint usb_interrupt_transfer_c {
+   if(transfer_type == INTERRUPT_TRANSFER) {
+      //========INTERRUPT IN=========
+      if(interrupt_dir == 1) {
+         interrupt_in_pid == PID_IN;
+         endp             == 4'd3;      
+      }
+      //========INTERRUPT OUT=========
+      if(interrupt_dir == 0) {
+         interrupt_out_pid  == PID_OUT;
+         data_stage_pid_out == PID_DATA1;
+         endp               == 4'd5;     
+      }
+   }
+}*/
 
-    // GET_INTERFACE
-                            else if (bRequest == GET_INTERFACE) {
-                            wValue == 0;
-                            wIndex inside {[0:3]};
-                            wLength == 1;
-                            }
-                            }
-                            else if (bmRequestType == 8'b10000010) {
-                            bRequest inside {GET_STATUS, SYNCH_FRAME};
-                          // GET_STATUS
-                            if (bRequest == GET_STATUS) {
-                            wValue == 0;
-                            wIndex inside {[0:15]};
-                            wLength == 2;
-                            }
-                      
-                          // SYNCH_FRAME
-                            else if (bRequest == SYNCH_FRAME) {
-                            wValue == 0;
-                            wIndex inside {[0:15]};
-                            wLength == 2;
-                            }
-                            }
-                            }  */
-                       
-                      
+//====== INTERRUPT TRANSFER CONSTRAINTS=======================
+constraint usb_interrupt_transfer_c {
+   //========INTERRUPT IN=========
+   if(transfer_type == INTERRUPT_TRANSFER &&
+      interrupt_dir == 1) {
+      interrupt_in_pid == PID_IN;
+      endp             == 4'd3 ;
+   }
+   //========INTERRUPT OUT=========
+   if(transfer_type == INTERRUPT_TRANSFER &&
+      interrupt_dir == 0) {
+      interrupt_out_pid == PID_OUT;
+      data_stage_pid_out == PID_DATA1;
+      endp               == 4'd5;   
+   }
+}
 
+//========BULK TRANSFER CONSTRAINTS=========================
+constraint usb_bulk_transfer_c {
 
-      ////////////////////////////////////////////////////////////////
-      //constraint token_pid {
-                          
-      //constraint data_pid 
+   if(transfer_type == BULK_TRANSFER &&
+      bulk_dir    == 1) {
+      bulk_in_pid == PID_IN;
+      endp        == 4'd1 ;
+   }
 
-      // constraint handshake_pid
+   if(transfer_type == BULK_TRANSFER &&
+      bulk_dir == 0) {
+      bulk_out_pid == PID_OUT;
+      data_stage_pid_out == PID_DATA1;
+      endp               == 4'd2;   
+   }
+} 
+
+//========ISO_CHRONOUS_TRANSFER CONSTRAINTS=========================
+constraint usb_iso_transfer_c {
+
+   if(transfer_type == ISO_CHRONOUS_TRANSFER &&
+      iso_dir    == 1) {
+      iso_in_pid == PID_IN;
+      endp        == 4'd6 ;
+   }
+
+   if(transfer_type ==ISO_CHRONOUS_TRANSFER &&
+      iso_dir == 0) {
+      iso_out_pid       == PID_OUT;
+      data_stage_pid_out == PID_DATA1;
+      endp               == 4'd7;   
+   }
+} 
  
-     // constraint brequest
+ constraint usb_speed_c {
 
-     // constraint bmrequest
-  
-       function new(string name="USB2p0_sequence_item");
+   if(usb_speed == USB_LS) {
+      op_mode         == 2'b00;
+      tx_valid        == 1'b1;
+      tx_validh       == 1'b0;
+      word_if         == 1'b0;
+      fsls_serialmode == 1'b1;
+      term_select     == 1'b0;
+      xcvr_select     == 2'b10;
+   }
+   else if(usb_speed == USB_FS) {
+      op_mode         == 2'b00;
+      tx_valid        == 1'b1;
+      tx_validh       == 1'b0;
+      word_if         == 1'b0;
+      fsls_serialmode == 1'b0;
+      term_select     == 1'b0;
+      xcvr_select     == 2'b01;
+   }
+   else if(usb_speed == USB_HS) {
+      op_mode         == 2'b00;
+      tx_valid        == 1'b1;
+      tx_validh       == 1'b1;
+      word_if         == 1'b1;
+      fsls_serialmode == 1'b0;
+      term_select     == 1'b0;
+      xcvr_select     == 2'b00;
+   }
+}
+      function new(string name="USB2p0_sequence_item");
               super.new(name);
        endfunction
         
