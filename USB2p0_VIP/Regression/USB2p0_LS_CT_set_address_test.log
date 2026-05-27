@@ -1,0 +1,17 @@
+# ** Warning: (vsim-12004) -c and -batch are mutually exclusive options and should not be specified together; -c option is being ignored.
+# ** Note: (vsim-220) 'modelsim.ini' is used as the ini file.
+# ** Warning: (vsim-8689) Ignoring plusarg '+acc'.  Did you mean '-voptargs=+acc'?
+# vsim -c -coverage -cvgperinstance -debugDB -batch "+acc" work.USB2p0_top "+UVM_TESTNAME=USB2p0_LS_CT_set_address_test" -l Regression/USB2p0_LS_CT_set_address_test.log -do "add log -r /*; coverage save -onexit coverage_reports/USB2p0_LS_CT_set_address_test.ucdb; run -all; quit -f" 
+# Start time: 20:28:26 on May 27,2026
+# ** Warning: (vsim-4308) Enabling visibility using +acc is recommended with debug flow.
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vsim-8611) Generating debug db.
+# ** Note: (vopt-220) 'modelsim.ini' is used as the ini file.
+# ** Warning: (vopt-4308) Enabling visibility using +acc is recommended with debug flow.
+# ** Fatal: (SIGINT) Compile interrupted.
+# top/USB2p0_PHY_interface.sv(1): Vopt Compiler exiting
+# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=1, Warnings=4.
+# Error loading design
+# 
+# End time: 20:28:28 on May 27,2026, Elapsed time: 0:00:02
+# Errors: 1, Warnings: 4

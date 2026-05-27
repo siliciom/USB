@@ -1,0 +1,2 @@
+var g_data = {"10":{"pr":"/USB2p0_pkg","ty":2,"dui":4,"dun":"work.USB2p0_pkg","cvgs":[{"h":["\\/USB2p0_pkg::usb2p0_subscriber::usb_pid_cg ",2,1,46,11],"cov":[78,74,97.05],"opts":{"goal":"100","per_instance":"true"}},{"h":["/USB2p0_pkg/usb2p0_subscriber/usb_pid_cg",1,1,11],"cov":[78,74,97.05],"opts":{"goal":"100","merge_instance":"auto(true)"}}]}};
+processCovergroupsData(g_data);

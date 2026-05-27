@@ -1,0 +1,2 @@
+var g_data = {"data":[{"n":"work.USB2p0_PHY_interface","id":3,"zf":1,"tc":80.00,"s":100.00,"t":60.00},{"n":"work.USB2p0_device_utmi_interface","id":2,"zf":1,"tc":87.96,"s":100.00,"t":75.92},{"n":"work.USB2p0_host_utmi_interface","id":1,"zf":1,"tc":89.35,"s":100.00,"t":78.70},{"n":"work.USB2p0_pkg","id":4,"zf":1,"tc":45.58,"s":41.10,"b":20.38,"fc":14.96,"fe":100.00,"t":0.00,"g":97.05},{"n":"work.USB2p0_top","id":5,"zf":1,"tc":79.89,"s":95.65,"b":58.33,"t":85.71}]};
+processDuData(g_data);
