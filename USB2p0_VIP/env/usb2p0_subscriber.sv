@@ -25,11 +25,11 @@ class usb2p0_subscriber extends uvm_subscriber#(USB2p0_sequence_item);
                               
                               }
  
-     ADDR: coverpoint usb_seq_item.addr{
+     USB_ADDR_CP: coverpoint usb_seq_item.addr{
                                                 bins device_addr0 = {0};
                                                 ignore_bins others = {[0:127]} with (item != 0);                                                                                                             }
  
-     ENDPOINT : coverpoint usb_seq_item.endp {
+     USB_ENDPOINT_CP : coverpoint usb_seq_item.endp {
                      				 bins control_ep        = {0};
 						 bins bulk_in_ep        = {1};
 					         bins bulk_out_ep       = {2};
@@ -40,7 +40,7 @@ class usb2p0_subscriber extends uvm_subscriber#(USB2p0_sequence_item);
                                                  ignore_bins others = {[8:15]}; 
                                                                                }
 
-     BREQUEST: coverpoint usb_seq_item.bRequest {
+     USB_BREQUEST_CP: coverpoint usb_seq_item.bRequest {
                                                     bins get_status        = {8'h00};
                                                     bins clear_feature     = {8'h01};
                                                     bins set_feature       = {8'h03};
@@ -54,27 +54,27 @@ class usb2p0_subscriber extends uvm_subscriber#(USB2p0_sequence_item);
         8'h00,8'h01,8'h03,8'h05,8'h06,8'h07,8'h08,8'h09,8'h0A,8'h0B }));                                                         
                                                       }
  
-     BMREQUESTTYPE : coverpoint  usb_seq_item.bmRequestType {
+     USB_BMREQUESTTYPE_CP : coverpoint  usb_seq_item.bmRequestType {
                                                                  bins std_out_device = {8'h00};
                                                                  bins std_device =     {8'h01};
                                                                  bins std_in_device  = {8'h80};
                                                              ignore_bins others = {[0:255]} with (!(item inside {8'h00,8'h01,8'h80,8'h81}));
                                                                                        }
  
-     WVALUE : coverpoint usb_seq_item.wValue { 
+     USB_WVALUE_CP : coverpoint usb_seq_item.wValue { 
                                                      bins zero = {16'h0000};
                                                      bins one  = {16'h0001};
                                                     ignore_bins others = {[0:65535]} with (!(item inside {16'h0000,16'h0001}));                                                             
                                                                }
  
-     WINDEX : coverpoint usb_seq_item.wIndex {
+     USB_WINDEX_CP : coverpoint usb_seq_item.wIndex {
                                                     bins wzero = {16'h0000};
                                                     bins wone  = {16'h0001};
                                                     bins val_81 = {16'h0081};  
                                                    ignore_bins others = {[0:65535]} with (!(item inside {16'h0000,16'h0001,16'h0081}));                                                   
                                                                    }
  
-     WLENGTH : coverpoint  usb_seq_item.wLength {
+     USB_WLENGTH_CP : coverpoint  usb_seq_item.wLength {
                                                       bins zero = {16'h0000};
                                                       bins two  = {16'h0002};
                                                       bins desc = {16'h0012};
@@ -82,89 +82,89 @@ class usb2p0_subscriber extends uvm_subscriber#(USB2p0_sequence_item);
                                                       }
  
  
-     BLENGTH : coverpoint usb_seq_item.blength {
+     USB_BLENGTH_CP : coverpoint usb_seq_item.blength {
                                                         bins device_len = {8'h12};
                                                        ignore_bins others = {[0:255]} with (item != 8'h12);
                                                       }
  
-     DESC_TYPE : coverpoint usb_seq_item.bdescriptors_type {
+     USB_DESC_TYPE_CP : coverpoint usb_seq_item.bdescriptors_type {
                                                                bins device_desc = {8'h01};
                                                                 ignore_bins others = {[0:255]} with (item != 8'h01);  
                                                                                                }
  
-     BCD_USB : coverpoint usb_seq_item.bcd_usb {
+     USB_BCD_USB_CP : coverpoint usb_seq_item.bcd_usb {
                                                       bins usb_1 = {16'h0110};
                                                      ignore_bins others = {[0:65535]} with (item != 16'h0110); 
                                                                                                         }
  
-     DEVICE_CLASS : coverpoint usb_seq_item.bDevice_class {
+     USB_DEVICE_CLASS_CP : coverpoint usb_seq_item.bDevice_class {
                                                                bins bdeviceclass = {8'h00};
                                                               ignore_bins others = {[0:255]} with (item != 8'h00);
                                                                                                          }
  
-     DEVICE_SUBCLASS : coverpoint usb_seq_item.bDevice_subclass {
+     USB_DEVICE_SUBCLASS_CP : coverpoint usb_seq_item.bDevice_subclass {
                                                            bins subclass = {8'h00};
                                                          ignore_bins others = {[0:255]} with (item != 8'h00);  
                                                                                                        }
  
         
-     DEVICE_PROTOCOL : coverpoint usb_seq_item.bDevice_protocol {
+     USB_DEVICE_PROTOCOL_CP : coverpoint usb_seq_item.bDevice_protocol {
                                                              bins protocol = {8'h00};
                                                          ignore_bins others = {[0:255]} with (item != 8'h00);  
                                                                                                       }
  
-     MAX_PACKET : coverpoint usb_seq_item.bMax_packetsize {
+     USB_MAX_PACKET_CP : coverpoint usb_seq_item.bMax_packetsize {
                                                           bins packetsize = {8'h40};
                                                           ignore_bins others = {[0:255]} with (item != 8'h40);
                                                             }
-     VENDOR_ID : coverpoint usb_seq_item.idvendor {
+     USB_VENDOR_ID_CP : coverpoint usb_seq_item.idvendor {
                                                      bins vendor_781 = {16'h0781};
                                                          ignore_bins others = {[0:65535]} with (item != 16'h0781); 
                                                                                                   }
-     PRODUCT_ID : coverpoint usb_seq_item.idproduct {
+     USB_PRODUCT_ID_CP : coverpoint usb_seq_item.idproduct {
                                                       bins product_5567 = {16'h5567};
                                                      ignore_bins others = {[0:65535]} with (item != 16'h5567); 
                                                                                                  }
  
-     DEVICE_BCD : coverpoint usb_seq_item.bcdDevice {
+     USB_DEVICE_BCD_CP : coverpoint usb_seq_item.bcdDevice {
                                                         bins dev_ver = {16'h0126};
                                                          ignore_bins others = {[0:65535]} with (item != 16'h0126);                                                                                                 }
  
-     MANUF_STR : coverpoint usb_seq_item.imanufacture {
+     USB_MANUF_STR_CP : coverpoint usb_seq_item.imanufacture {
                                                          bins mfg = {8'h01};
                                                       ignore_bins others = {[0:255]} with (item != 8'h01);
                                                       }
  
-     PROD_STR : coverpoint usb_seq_item.iproduct {
+     USB_PROD_STR_CP : coverpoint usb_seq_item.iproduct {
                                                  bins product = {8'h02};
                                                 ignore_bins others = {[0:255]} with (item != 8'h02);
                                                   }
  
-          NUM_CONFIG : coverpoint usb_seq_item.bNum_configuration {
+     USB_NUM_CONFIG_CP : coverpoint usb_seq_item.bNum_configuration {
                                                           bins cfg = {8'h01};
                                                          ignore_bins others = {[0:255]} with (item != 8'h01);  
                                                                                                       }
    
-         TX_VALID  : coverpoint usb_seq_item.tx_valid;
-         TX_VALIDH : coverpoint usb_seq_item.tx_validh;
-         RX_VALID  : coverpoint usb_seq_item.rx_valid;
-         RX_VALIDH : coverpoint usb_seq_item.rx_validh;
-         WORD_IF   : coverpoint  usb_seq_item.word_if;
+     USB_TX_VALID_CP  : coverpoint usb_seq_item.tx_valid;
+     USB_TX_VALIDH_CP : coverpoint usb_seq_item.tx_validh;
+     USB_RX_VALID_CP  : coverpoint usb_seq_item.rx_valid;
+     USB_RX_VALIDH_CP : coverpoint usb_seq_item.rx_validh;
+     USB_WORD_IF_CP   : coverpoint  usb_seq_item.word_if;
  
-         OP_MODE : coverpoint usb_seq_item.op_mode {
+     USB_OP_MODE_CP : coverpoint usb_seq_item.op_mode {
                                                  bins hs_only = {2'b00};
                                                 ignore_bins others = {[0:3]} with (item != 2'b00);
                                                    }
 
-        TERM_SELECT : coverpoint usb_seq_item.term_select;
-        XCVR_SELECT : coverpoint usb_seq_item.xcvr_select;
-        SUSPEND_N : coverpoint usb_seq_item.suspend_n;
-        FSLS_SERIALMODE : coverpoint usb_seq_item.fsls_serialmode;
-        FSLS_LOW_POWER : coverpoint usb_seq_item.fsls_low_power;
-        OTG_DPPULLDOWN : coverpoint usb_seq_item.otg_dppulldown;
-        OTG_DMPULLDOWN : coverpoint usb_seq_item.otg_dmpulldown;
+     USB_TERM_SELECT_CP : coverpoint usb_seq_item.term_select;
+     USB_XCVR_SELECT_CP : coverpoint usb_seq_item.xcvr_select;
+     USB_SUSPEND_N_CP : coverpoint usb_seq_item.suspend_n;
+     USB_FSLS_SERIALMODE_CP : coverpoint usb_seq_item.fsls_serialmode;
+     USB_FSLS_LOW_POWER_CP : coverpoint usb_seq_item.fsls_low_power;
+     USB_OTG_DPPULLDOWN_CP : coverpoint usb_seq_item.otg_dppulldown;
+     USB_OTG_DMPULLDOWN_CP : coverpoint usb_seq_item.otg_dmpulldown;
  
-        UTMI_VALID_CROSS : cross TX_VALID, RX_VALID;
+     USB_UTMI_VALID_CROSS_CP : cross TX_VALID, RX_VALID;
  endgroup
 
 
