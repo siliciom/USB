@@ -366,21 +366,3 @@ endmodule
 
 
 
-// ============================================================
-//  NRZI: no consecutive identical bits without stuff ---
-// ============================================================
-//sequence s_dp_dm_7;
-//   (dp == 1'b1 && dm == 1'b0) [*7];
-//endsequence
-//
-//property p_nrzi_no_run_of_7;
-//   @(posedge clk)
-//   disable iff(reset)
-//   txvalid |-> not s_dp_dm_7;
-//endproperty
-//
-//a_nrzi_no_run_of_7:
-//assert property(p_nrzi_no_run_of_7)
-//else
-//   `uvm_error("USB_SVA","FAIL : NRZI:7_consecutive_1s_bit_stuffing_violation")
-
